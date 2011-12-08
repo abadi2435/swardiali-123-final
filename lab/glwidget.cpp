@@ -114,12 +114,12 @@ void GLWidget::initializeResources()
 void GLWidget::loadCubeMap()
 {
     QList<QFile *> fileList;
-    fileList.append(new QFile("../lab09/textures/astra/posx.jpg"));
-    fileList.append(new QFile("../lab09/textures/astra/negx.jpg"));
-    fileList.append(new QFile("../lab09/textures/astra/posy.jpg"));
-    fileList.append(new QFile("../lab09/textures/astra/negy.jpg"));
-    fileList.append(new QFile("../lab09/textures/astra/posz.jpg"));
-    fileList.append(new QFile("../lab09/textures/astra/negz.jpg"));
+    fileList.append(new QFile("./textures/astra/posx.jpg"));
+    fileList.append(new QFile("./textures/astra/negx.jpg"));
+    fileList.append(new QFile("./textures/astra/posy.jpg"));
+    fileList.append(new QFile("./textures/astra/negy.jpg"));
+    fileList.append(new QFile("./textures/astra/posz.jpg"));
+    fileList.append(new QFile("./textures/astra/negz.jpg"));
     m_cubeMap = ResourceLoader::loadCubeMap(fileList);
 }
 
@@ -129,12 +129,12 @@ void GLWidget::loadCubeMap()
 void GLWidget::createShaderPrograms()
 {
     const QGLContext *ctx = context();
-    m_shaderPrograms["reflect"] = ResourceLoader::newShaderProgram(ctx, "../lab09/shaders/reflect.vert",
-                                                                   "../lab09/shaders/reflect.frag");
-    m_shaderPrograms["refract"] = ResourceLoader::newShaderProgram(ctx, "../lab09/shaders/refract.vert",
-                                                                   "../lab09/shaders/refract.frag");
-    m_shaderPrograms["brightpass"] = ResourceLoader::newFragShaderProgram(ctx, "../lab09/shaders/brightpass.frag");
-    m_shaderPrograms["blur"] = ResourceLoader::newFragShaderProgram(ctx, "../lab09/shaders/blur.frag");
+    m_shaderPrograms["reflect"] = ResourceLoader::newShaderProgram(ctx, "./shaders/reflect.vert",
+                                                                   "./shaders/reflect.frag");
+    m_shaderPrograms["refract"] = ResourceLoader::newShaderProgram(ctx, "./shaders/refract.vert",
+                                                                   "./shaders/refract.frag");
+    m_shaderPrograms["brightpass"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/brightpass.frag");
+    m_shaderPrograms["blur"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/blur.frag");
 }
 
 /**
