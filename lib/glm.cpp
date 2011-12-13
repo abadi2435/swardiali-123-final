@@ -1708,10 +1708,10 @@ GLvoid glmDraw(GLMmodel* model, GLuint mode,char *drawonly){
         }
 
         if (mode & GLM_TEXTURE)  {
-            if(textureid == -1)
-                glBindTexture(GL_TEXTURE_2D, 0);
+            if(textureid == -1){}
+                //glBindTexture(GL_TEXTURE_2D, 2); //TODO: CHANGE THIS TO BE EXTENSIBLE
             else{
-                glBindTexture(GL_TEXTURE_2D, model->textures[textureid].id);
+                //glBindTexture(GL_TEXTURE_2D, model->textures[textureid].id);
             }
         }
         

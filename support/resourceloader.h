@@ -34,6 +34,8 @@ namespace ResourceLoader
 
     // Returns the cubeMap ID
     GLuint loadCubeMap(QList<QFile *> files);
+    // Returns the texture ID
+    GLuint loadTexture(const QString &path);
 
 }
 

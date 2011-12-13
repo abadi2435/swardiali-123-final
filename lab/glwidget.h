@@ -56,12 +56,16 @@ private:
     Vector2 m_prevMousePos;
     OrbitCamera m_camera;
 
+    Vector3 m_light1Pos;
+
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
     QHash<QString, QGLFramebufferObject *> m_framebufferObjects; // hash map of all framebuffer objects
     Model m_dragon; // dragon model
     GLuint m_skybox; // skybox call list ID
     GLuint m_cubeMap; // cubeMap texture ID
+    GLuint m_brickTex; // brick texture ID
+    GLuint m_brickNormalTex; // brick normal map texture ID
     QFont m_font; // font for rendering text
 
 };

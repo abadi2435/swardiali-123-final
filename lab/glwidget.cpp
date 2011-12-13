@@ -36,6 +36,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
     m_camera.theta = M_PI * 1.5f, m_camera.phi = 0.2f;
     m_camera.fovy = 60.f;
 
+    m_light1Pos = Vector3(0.f, 0.f, 30.f);
+
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
 
@@ -90,14 +92,22 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_dragon = ResourceLoader::loadObjModel("/course/cs123/data/mesh/natkins.obj");
+    m_dragon = ResourceLoader::loadObjModel("/course/cs123/data/mesh/sphere.obj");
     cout << "Loaded dragon..." << endl;
 
     m_skybox = ResourceLoader::loadSkybox();
     cout << "Loaded skybox..." << endl;
 
     loadCubeMap();
-    cout << "Loaded cube map..." << endl;
+    cout << "Loaded cube map... " << m_cubeMap << endl;
+
+    m_brickTex = ResourceLoader::loadTexture("./textures/brickwork-texture.jpg");
+    if (m_brickTex == -1) {cout << "Failed to load brick texture..." << endl;}
+    else {cout << "Loaded brick texture... " << m_brickTex << endl;}
+
+    m_brickNormalTex = ResourceLoader::loadTexture("./textures/brickwork_normal-map.jpg");
+    if (m_brickNormalTex == -1) {cout << "Failed to load bone head texture..." << endl;}
+    else {cout << "Loaded brick normal map texture... " << m_brickNormalTex << endl;}
 
     createShaderPrograms();
     cout << "Loaded shader programs..." << endl;
@@ -132,9 +142,12 @@ void GLWidget::createShaderPrograms()
     m_shaderPrograms["reflect"] = ResourceLoader::newShaderProgram(ctx, "./shaders/reflect.vert",
                                                                    "./shaders/reflect.frag");
     m_shaderPrograms["refract"] = ResourceLoader::newShaderProgram(ctx, "./shaders/refract.vert",
-                                                                   "./shaders/refract.frag");
+                                                                   "./shaders/refract.frag");;
     m_shaderPrograms["brightpass"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/brightpass.frag");
+
     m_shaderPrograms["blur"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/blur.frag");
+
+    m_shaderPrograms["phong"] = ResourceLoader::newShaderProgram(ctx, "./shaders/phong.vert", "./shaders/phong.frag");
 }
 
 /**
@@ -212,10 +225,14 @@ void GLWidget::paintGL()
     int height = this->height();
 
     // Render the scene to a framebuffer
-    m_framebufferObjects["fbo_0"]->bind();
+    //m_framebufferObjects["fbo_0"]->bind();
+
     applyPerspectiveCamera(width, height);
     renderScene();
-    m_framebufferObjects["fbo_0"]->release();
+
+    //m_framebufferObjects["fbo_0"]->release();
+
+    /*
 
     // Copy the rendered scene into framebuffer 1
     m_framebufferObjects["fbo_0"]->blitFramebuffer(m_framebufferObjects["fbo_1"],
@@ -270,12 +287,15 @@ void GLWidget::paintGL()
     }
 
     paintText();
+
+    */
 }
 
 /**
   Renders the scene.  May be called multiple times by paintGL() if necessary.
 **/
 void GLWidget::renderScene() {
+
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -289,14 +309,37 @@ void GLWidget::renderScene() {
     glEnable(GL_CULL_FACE);
 
     // Render the dragon with the refraction shader bound
+    //glActiveTexture(GL_TEXTURE0);
+
+    //m_shaderPrograms["refract"]->bind();
+    //m_shaderPrograms["refract"]->setUniformValue("CubeMap", GL_TEXTURE0);
+
+    // Enable 2D texture and draw the dragon
+    glEnable(GL_TEXTURE_2D);
+
     glActiveTexture(GL_TEXTURE0);
-    m_shaderPrograms["refract"]->bind();
-    m_shaderPrograms["refract"]->setUniformValue("CubeMap", GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_brickTex);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_brickNormalTex);
+
+    float light_theta = (m_clock.elapsed() % 5000) / (5000.f/(2*M_PI));
+    m_light1Pos.x = 15.f * cos(light_theta);
+    m_light1Pos.y = 15.f * sin(light_theta);
+    //cout << m_light1Pos << endl;
+
+    m_shaderPrograms["phong"]->bind();
+    m_shaderPrograms["phong"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["phong"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
+    m_shaderPrograms["phong"]->setUniformValue("brickTexture", GLint(0)); // need to use GLint(x) instead of GL_TEXTUREx for some reason...
+    m_shaderPrograms["phong"]->setUniformValue("normalTexture", GLint(1));
+
     glPushMatrix();
     glTranslatef(-1.25f, 0.f, 0.f);
     glCallList(m_dragon.idx);
     glPopMatrix();
-    m_shaderPrograms["refract"]->release();
+    //m_shaderPrograms["refract"]->release();
+    m_shaderPrograms["phong"]->release();
 
     // Render the dragon with the reflection shader bound
     m_shaderPrograms["reflect"]->bind();

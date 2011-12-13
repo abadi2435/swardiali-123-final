@@ -18,6 +18,8 @@ struct OrbitCamera
 
     void mouseMove(const Vector2 &delta);
     void mouseWheel(float delta);
+
+    Vector3 getCameraPosition();
 };
 
 #endif // CAMERA_H
