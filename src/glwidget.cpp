@@ -40,6 +40,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
 
     m_useNormalMapping = true;
     m_drawDepthMap = false;
+    m_focalLength = 10.0;
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -95,7 +96,7 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_mesh = ResourceLoader::loadObjModel("./models/sphere.obj");
+    m_mesh = ResourceLoader::loadObjModel("./models/orange.obj");
     cout << "Loaded object mesh..." << endl;
 
     m_skybox = ResourceLoader::loadSkybox();
@@ -334,19 +335,20 @@ void GLWidget::renderDepthScene() { //this is for the depth
     glActiveTexture(GL_TEXTURE0);
     m_shaderPrograms["depth"]->bind();
     m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["depth"]->setUniformValue("focalLength", m_focalLength);
 
     // Draw the first object
     glPushMatrix();
     glTranslatef(-1.25f,0.f,0.f);
-    //glScalef(5.0f, 5.0f, 5.0f);
-    //glRotatef(90.f, 1.0f, 0.f, 0.f);
+    glScalef(5.0f, 5.0f, 5.0f);
+    glRotatef(-90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
 
     // Draw the second object
     glPushMatrix();
     glTranslatef(1.25f,0.f,0.f);
-    //glScalef(5.0f, 5.0f, 5.0f);
+    glScalef(5.0f, 5.0f, 5.0f);
     glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
@@ -408,14 +410,14 @@ void GLWidget::renderScene() {
 
     glPushMatrix();
     glTranslatef(-1.25f, 0.f, 0.f);
-    //glScalef(5.0f, 5.0f, 5.0f);
-    //glRotatef(90.f, 1.0f, 0.f, 0.f);
+    glScalef(5.0f, 5.0f, 5.0f);
+    glRotatef(-90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
 
     glPushMatrix();
     glTranslatef(1.25f,0.f,0.f);
-    //glScalef(5.0f, 5.0f, 5.0f);
+    glScalef(5.0f, 5.0f, 5.0f);
     glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
@@ -583,6 +585,16 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             m_drawDepthMap = !m_drawDepthMap;
             break;
         }
+        case Qt::Key_Up:
+        {
+            m_focalLength += 0.1;
+            break;
+        }
+        case Qt::Key_Down:
+        {
+            m_focalLength -= 0.1;
+            break;
+        }
     }
 }
 
@@ -605,4 +617,5 @@ void GLWidget::paintText()
     renderText(10, 35, "S: Save screenshot", m_font);
     renderText(10, 50, "N: Toggle normal mapping", m_font);
     renderText(10, 65, "D: Draw depth map on/off", m_font);
+    renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
 }
