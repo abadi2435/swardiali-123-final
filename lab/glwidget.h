@@ -36,16 +36,16 @@ protected:
     // Initialization code
     void initializeResources();
     void loadCubeMap();
+    void loadDepthCubeMap();
     void createShaderPrograms();
     void createFramebufferObjects(int width, int height);
-    void createBlurKernel(int radius, int width, int height, GLfloat* kernel, GLfloat* offsets);
 
     // Drawing code
     void applyOrthogonalCamera(float width, float height);
     void applyPerspectiveCamera(float width, float height);
     void renderTexturedQuad(int width, int height, bool flip);
-    void renderBlur(int width, int height);
     void renderScene();
+    void renderDepthScene();
     void paintText();
 
 private:
@@ -61,11 +61,12 @@ private:
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
     QHash<QString, QGLFramebufferObject *> m_framebufferObjects; // hash map of all framebuffer objects
-    Model m_dragon; // dragon model
+    Model m_mesh; // object model
     GLuint m_skybox; // skybox call list ID
     GLuint m_cubeMap; // cubeMap texture ID
-    GLuint m_brickTex; // brick texture ID
-    GLuint m_brickNormalTex; // brick normal map texture ID
+    GLuint m_depthCubeMap; // all white cubeMap texture ID
+    GLuint m_diffuseTex; // diffuse texture ID
+    GLuint m_normalMapTex; // normal map texture ID
     QFont m_font; // font for rendering text
 
 };

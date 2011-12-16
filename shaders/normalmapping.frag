@@ -10,7 +10,7 @@ varying vec3 pos;
 varying vec3 inc_light;
 
 void main() {   
-  
+    
   vec4 diffuse;
     
   vec3 norm = texture2D(normalTexture, gl_TexCoord[0].st).rgb * 2.0 - 1.0;
@@ -36,5 +36,4 @@ void main() {
   //		   0.5 * texture2D(brickTexture, gl_TexCoord[0].st);
   vec4 tex_color = texture2D(brickTexture, gl_TexCoord[0].st);
   gl_FragColor = (diffuse + specular) * vec4(tex_color.rgb,1.0);
-    
 }

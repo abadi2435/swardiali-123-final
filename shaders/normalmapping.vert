@@ -6,7 +6,7 @@ uniform vec3 light1Position;
 
 void main() { 
   gl_Position = ftransform(); 
-  gl_TexCoord[0] = gl_MultiTexCoord0;   
+  gl_TexCoord[0] = gl_MultiTexCoord0;      
     
   //norm = gl_Normal.xyz;
   pos = gl_Vertex.xyz;

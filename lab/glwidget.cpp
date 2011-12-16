@@ -52,7 +52,7 @@ GLWidget::~GLWidget()
         delete fbo;
     glDeleteLists(m_skybox, 1);
     const_cast<QGLContext *>(context())->deleteTexture(m_cubeMap);
-    glmDelete(m_dragon.model);
+    glmDelete(m_mesh.model);
 }
 
 /**
@@ -92,8 +92,8 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_dragon = ResourceLoader::loadObjModel("/course/cs123/data/mesh/sphere.obj");
-    cout << "Loaded dragon..." << endl;
+    m_mesh = ResourceLoader::loadObjModel("/course/cs123/data/mesh/sphere.obj");
+    cout << "Loaded object mesh..." << endl;
 
     m_skybox = ResourceLoader::loadSkybox();
     cout << "Loaded skybox..." << endl;
@@ -101,13 +101,16 @@ void GLWidget::initializeResources()
     loadCubeMap();
     cout << "Loaded cube map... " << m_cubeMap << endl;
 
-    m_brickTex = ResourceLoader::loadTexture("./textures/brickwork-texture.jpg");
-    if (m_brickTex == -1) {cout << "Failed to load brick texture..." << endl;}
-    else {cout << "Loaded brick texture... " << m_brickTex << endl;}
+    loadDepthCubeMap();
+    cout << "Loaded depth cube map..." << m_depthCubeMap << endl;
 
-    m_brickNormalTex = ResourceLoader::loadTexture("./textures/brickwork_normal-map.jpg");
-    if (m_brickNormalTex == -1) {cout << "Failed to load bone head texture..." << endl;}
-    else {cout << "Loaded brick normal map texture... " << m_brickNormalTex << endl;}
+    m_diffuseTex = ResourceLoader::loadTexture("./textures/concrete.jpg");
+    if (m_diffuseTex == -1) {cout << "Failed to load diffuse texture..." << endl;}
+    else {cout << "Loaded diffuse texture... " << m_diffuseTex << endl;}
+
+    m_normalMapTex = ResourceLoader::loadTexture("./textures/rough_normal.jpg");
+    if (m_normalMapTex == -1) {cout << "Failed to load normal map texture..." << endl;}
+    else {cout << "Loaded normal map texture... " << m_normalMapTex << endl;}
 
     createShaderPrograms();
     cout << "Loaded shader programs..." << endl;
@@ -134,20 +137,34 @@ void GLWidget::loadCubeMap()
 }
 
 /**
+  Load a pure white cube box for rendering the depths
+ **/
+void GLWidget::loadDepthCubeMap()
+{
+    QList<QFile *> fileList;
+    QFile* white = new QFile("./textures/astra/white.jpg");
+    fileList.append(white);
+    fileList.append(white);
+    fileList.append(white);
+    fileList.append(white);
+    fileList.append(white);
+    fileList.append(white);
+    m_depthCubeMap = ResourceLoader::loadCubeMap(fileList);
+}
+
+/**
   Create shader programs.
  **/
 void GLWidget::createShaderPrograms()
 {
     const QGLContext *ctx = context();
-    m_shaderPrograms["reflect"] = ResourceLoader::newShaderProgram(ctx, "./shaders/reflect.vert",
-                                                                   "./shaders/reflect.frag");
-    m_shaderPrograms["refract"] = ResourceLoader::newShaderProgram(ctx, "./shaders/refract.vert",
-                                                                   "./shaders/refract.frag");;
-    m_shaderPrograms["brightpass"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/brightpass.frag");
+    m_shaderPrograms["normalmapping"] = ResourceLoader::newShaderProgram(ctx, "./shaders/normalmapping.vert",
+                                                                         "./shaders/normalmapping.frag");
 
-    m_shaderPrograms["blur"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/blur.frag");
+    m_shaderPrograms["dblur"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/dblur.frag");
 
-    m_shaderPrograms["phong"] = ResourceLoader::newShaderProgram(ctx, "./shaders/phong.vert", "./shaders/phong.frag");
+    m_shaderPrograms["depth"] = ResourceLoader::newShaderProgram(ctx, "./shaders/depth.vert",
+                                                                 "./shaders/depth.frag");
 }
 
 /**
@@ -163,13 +180,10 @@ void GLWidget::createFramebufferObjects(int width, int height)
     m_framebufferObjects["fbo_0"] = new QGLFramebufferObject(width, height, QGLFramebufferObject::Depth,
                                                              GL_TEXTURE_2D, GL_RGB16F_ARB);
     m_framebufferObjects["fbo_0"]->format().setSamples(16);
-    // Allocate the secondary framebuffer obejcts for rendering textures to (post process effects)
-    // These do not require depth attachments
-    m_framebufferObjects["fbo_1"] = new QGLFramebufferObject(width, height, QGLFramebufferObject::NoAttachment,
+
+    m_framebufferObjects["fbo_1"] = new QGLFramebufferObject(width, height, QGLFramebufferObject::Depth,
                                                              GL_TEXTURE_2D, GL_RGB16F_ARB);
-    // TODO: Create another framebuffer here.  Look up two lines to see how to do this... =.=
-    m_framebufferObjects["fbo_2"] = new QGLFramebufferObject(width, height, QGLFramebufferObject::NoAttachment,
-                                                             GL_TEXTURE_2D, GL_RGB16F_ARB);
+    m_framebufferObjects["fbo_1"]->format().setSamples(16);
 }
 
 /**
@@ -224,72 +238,94 @@ void GLWidget::paintGL()
     int width = this->width();
     int height = this->height();
 
-    // Render the scene to a framebuffer
-    //m_framebufferObjects["fbo_0"]->bind();
+    // Render the depth scene to framebuffer0
+    m_framebufferObjects["fbo_0"]->bind();
+    applyPerspectiveCamera(width, height);
+    renderDepthScene();
+    m_framebufferObjects["fbo_0"]->release();
 
+    // Render the normal mapped scene to framebuffer1
+    m_framebufferObjects["fbo_1"]->bind();
     applyPerspectiveCamera(width, height);
     renderScene();
+    m_framebufferObjects["fbo_1"]->release();
 
-    //m_framebufferObjects["fbo_0"]->release();
+    // Bind the depth of field blur shader passing it the window's height and width
+    m_shaderPrograms["dblur"]->bind();
+    m_shaderPrograms["dblur"]->setUniformValue("height", (float) height);
+    m_shaderPrograms["dblur"]->setUniformValue("width", (float) width);
 
-    /*
+    glActiveTexture(GL_TEXTURE3); // Bind the depth texture to slot 3
+    glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
+    glActiveTexture(GL_TEXTURE0);
 
-    // Copy the rendered scene into framebuffer 1
-    m_framebufferObjects["fbo_0"]->blitFramebuffer(m_framebufferObjects["fbo_1"],
-                                                   QRect(0, 0, width, height), m_framebufferObjects["fbo_0"],
-                                                   QRect(0, 0, width, height), GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    // TODO: Add drawing code here
-    // Switch to the orthogonal camera so we can easily draw a quad covering the screen
-    applyOrthogonalCamera(width, height);
-    // Bind the texture in framebuffer one
+    glActiveTexture(GL_TEXTURE4); // Bind the regular scene texture to slot 4
     glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
-    // Render a quad across the screen
+    glActiveTexture(GL_TEXTURE0);
+
+    // Pass the depth map and the regular scene to the shader
+    m_shaderPrograms["dblur"]->setUniformValue("depthtex", GLint(3));
+    m_shaderPrograms["dblur"]->setUniformValue("tex", GLint(4));
+
+    // Draw a quad to the screen
+    applyOrthogonalCamera(width,height);
     renderTexturedQuad(width, height, true);
-    // Unbind the bound texture
-    glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Bind frame buffer 2
-    m_framebufferObjects["fbo_2"]->bind();
-    // Bind the brightpass shader
-    m_shaderPrograms["brightpass"]->bind();
-    // Bind frame buffer one's texture
-    glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
-    // Draw a quad
-    renderTexturedQuad(width, height, true);
-    // Unbind the shader
-    m_shaderPrograms["brightpass"]->release();
-    // Unbind the texture
-    glBindTexture(GL_TEXTURE_2D, 0);
-    // Unbind the framebuffer
-    m_framebufferObjects["fbo_2"]->release();
+    // Release the shader
+    m_shaderPrograms["dblur"]->release();
 
-    // TODO: Uncomment this section in step 2 of the lab
-
-    float scales[] = {4.f,8.f,16.f,32.f};
-    for (int i = 0; i < 4; ++i)
-    {
-        // Render the blurred brightpass filter result to fbo 1
-        renderBlur(width / scales[i], height / scales[i]);
-
-        // Bind the image from fbo to a texture
-        glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-        // Enable alpha blending and render the texture to the screen
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        glTranslatef(0.f, (scales[i] - 1) * -height, 0.f);
-        renderTexturedQuad(width * scales[i], height * scales[i], false);
-        glDisable(GL_BLEND);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
+    // Display the FPS
     paintText();
-
-    */
 }
+
+/**
+  Renders the scene.  May be called multiple times by paintGL() if necessary.
+**/
+void GLWidget::renderDepthScene() { //this is for the depth
+
+    glDisable(GL_BLEND);
+
+    // Enable depth testing
+    glEnable(GL_DEPTH_TEST);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    //Enable cube maps and draw the skybox
+    glEnable(GL_TEXTURE_CUBE_MAP);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMap);
+    glCallList(m_skybox);
+
+    // Enable culling (back) faces for rendering the dragon
+    glEnable(GL_CULL_FACE);
+
+    // Render the dragon with the refraction shader bound
+    glActiveTexture(GL_TEXTURE0);
+    m_shaderPrograms["depth"]->bind();
+    m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["depth"]->setUniformValue("objTrans", -1.25f, 0.f, 0.f);
+
+    glPushMatrix();
+    glTranslatef(-1.25f,0.f,0.f);
+    glCallList(m_mesh.idx);
+    glPopMatrix();
+    m_shaderPrograms["depth"]->release();
+
+    m_shaderPrograms["depth"]->bind();
+    m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["depth"]->setUniformValue("objTrans", 1.25f, 0.f, 0.f);
+
+    glPushMatrix();
+    glTranslatef(1.25f,0.f,0.f);
+    glCallList(m_mesh.idx);
+    glPopMatrix();
+    m_shaderPrograms["depth"]->release();
+
+    // Disable culling, depth testing and cube maps
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST); //why?
+    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
+    glDisable(GL_TEXTURE_CUBE_MAP);
+}
+
 
 /**
   Renders the scene.  May be called multiple times by paintGL() if necessary.
@@ -308,89 +344,44 @@ void GLWidget::renderScene() {
     // Enable culling (back) faces for rendering the dragon
     glEnable(GL_CULL_FACE);
 
-    // Render the dragon with the refraction shader bound
-    //glActiveTexture(GL_TEXTURE0);
-
-    //m_shaderPrograms["refract"]->bind();
-    //m_shaderPrograms["refract"]->setUniformValue("CubeMap", GL_TEXTURE0);
-
     // Enable 2D texture and draw the dragon
     glEnable(GL_TEXTURE_2D);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_brickTex);
-
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_brickNormalTex);
+    glBindTexture(GL_TEXTURE_2D, m_diffuseTex);
+    glActiveTexture(GL_TEXTURE0);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_normalMapTex);
+    glActiveTexture(GL_TEXTURE0);
 
     float light_theta = (m_clock.elapsed() % 5000) / (5000.f/(2*M_PI));
     m_light1Pos.x = 15.f * cos(light_theta);
     m_light1Pos.y = 15.f * sin(light_theta);
-    //cout << m_light1Pos << endl;
 
-    m_shaderPrograms["phong"]->bind();
-    m_shaderPrograms["phong"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["phong"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
-    m_shaderPrograms["phong"]->setUniformValue("brickTexture", GLint(0)); // need to use GLint(x) instead of GL_TEXTUREx for some reason...
-    m_shaderPrograms["phong"]->setUniformValue("normalTexture", GLint(1));
+    m_shaderPrograms["normalmapping"]->bind();
+    m_shaderPrograms["normalmapping"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["normalmapping"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
+    m_shaderPrograms["normalmapping"]->setUniformValue("brickTexture", GLint(1)); // need to use GLint(x) instead of GL_TEXTUREx for some reason...
+    m_shaderPrograms["normalmapping"]->setUniformValue("normalTexture", GLint(2));
 
     glPushMatrix();
     glTranslatef(-1.25f, 0.f, 0.f);
-    glCallList(m_dragon.idx);
+    glCallList(m_mesh.idx);
     glPopMatrix();
-    //m_shaderPrograms["refract"]->release();
-    m_shaderPrograms["phong"]->release();
 
-    // Render the dragon with the reflection shader bound
-    m_shaderPrograms["reflect"]->bind();
-    m_shaderPrograms["reflect"]->setUniformValue("CubeMap", GL_TEXTURE0);
     glPushMatrix();
     glTranslatef(1.25f,0.f,0.f);
-    glCallList(m_dragon.idx);
+    glCallList(m_mesh.idx);
     glPopMatrix();
-    m_shaderPrograms["reflect"]->release();
+
+    m_shaderPrograms["normalmapping"]->release();
 
     // Disable culling, depth testing and cube maps
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_CUBE_MAP,0);
     glDisable(GL_TEXTURE_CUBE_MAP);
-}
-
-/**
-  Run a gaussian blur on the texture stored in fbo 2 and
-  put the result in fbo 1.  The blur should have a radius of 2.
-
-  @param width: the viewport width
-  @param height: the viewport height
-**/
-void GLWidget::renderBlur(int width, int height)
-{
-    int radius = 2;
-    int dim = radius * 2 + 1;
-    GLfloat kernel[dim * dim];
-    GLfloat offsets[dim * dim * 2];
-    createBlurKernel(radius, width, height, &kernel[0], &offsets[0]);
-    // TODO: Finish filling this in
-
-    // Bind frame buffer 2
-    m_framebufferObjects["fbo_1"]->bind();
-    // Bind the brightpass shader
-    m_shaderPrograms["blur"]->bind();
-    m_shaderPrograms["blur"]->setUniformValueArray("offsets", offsets, dim * dim, 2);
-    m_shaderPrograms["blur"]->setUniformValueArray("kernel", kernel, dim * dim, 1);
-    m_shaderPrograms["blur"]->setUniformValue("arraySize", dim * dim);
-    //m_shaderPrograms["blur"]->setUniformValue("tex", m_framebufferObjects["fbo_2"]->texture());
-    // Bind frame buffer one's texture
-    glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_2"]->texture());
-    // Draw a quad
-    renderTexturedQuad(width, height, false);
-    // Unbind the shader
-    m_shaderPrograms["blur"]->release();
-    // Unbind the texture
-    glBindTexture(GL_TEXTURE_2D, 0);
-    // Unbind the framebuffer
-    m_framebufferObjects["fbo_1"]->release();
 }
 
 /**
@@ -469,43 +460,6 @@ void GLWidget::renderTexturedQuad(int width, int height, bool flip) {
     glTexCoord2f(0.0f, flip ? 0.0f : 1.0f);
     glVertex2f(0.0f, height);
     glEnd();
-}
-
-/**
-  Creates a gaussian blur kernel with the specified radius.  The kernel values
-  and offsets are stored.
-
-  @param radius: The radius of the kernel to create.
-  @param width: The width of the image.
-  @param height: The height of the image.
-  @param kernel: The array to write the kernel values to.
-  @param offsets: The array to write the offset values to.
-**/
-void GLWidget::createBlurKernel(int radius, int width, int height,
-                                                    GLfloat* kernel, GLfloat* offsets)
-{
-    int size = radius * 2 + 1;
-    float sigma = radius / 3.0f;
-    float twoSigmaSigma = 2.0f * sigma * sigma;
-    float rootSigma = sqrt(twoSigmaSigma * M_PI);
-    float total = 0.0f;
-    float xOff = 1.0f / width, yOff = 1.0f / height;
-    int offsetIndex = 0;
-    for (int y = -radius, idx = 0; y <= radius; ++y)
-    {
-        for (int x = -radius; x <= radius; ++x,++idx)
-        {
-            float d = x * x + y * y;
-            kernel[idx] = exp(-d / twoSigmaSigma) / rootSigma;
-            total += kernel[idx];
-            offsets[offsetIndex++] = x * xOff;
-            offsets[offsetIndex++] = y * yOff;
-        }
-    }
-    for (int i = 0; i < size * size; ++i)
-    {
-        kernel[i] /= total;
-    }
 }
 
 /**
