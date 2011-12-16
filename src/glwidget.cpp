@@ -36,7 +36,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
     m_camera.theta = M_PI * 1.5f, m_camera.phi = 0.2f;
     m_camera.fovy = 60.f;
 
-    m_light1Pos = Vector3(0.f, 0.f, 30.f);
+    m_light1Pos = Vector3(0.f, 15.f, 30.f);
 
     m_useNormalMapping = true;
 
@@ -178,6 +178,16 @@ void GLWidget::loadTextures() {
     m_textures["obj_normal"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["obj_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./textures/floor_diffuse.jpg";
+    m_textures["floor_diffuse"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./textures/floor_normal.jpg";
+    m_textures["floor_normal"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["floor_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 }
 
 /**
@@ -257,6 +267,11 @@ void GLWidget::paintGL()
     renderDepthScene();
     m_framebufferObjects["fbo_0"]->release();
 
+//    applyOrthogonalCamera(width, height);
+//    glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
+//    renderTexturedQuad(width, height, true);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+
     // Render the normal mapped scene to framebuffer1
     m_framebufferObjects["fbo_1"]->bind();
     applyPerspectiveCamera(width, height);
@@ -332,6 +347,13 @@ void GLWidget::renderDepthScene() { //this is for the depth
     glPopMatrix();
     m_shaderPrograms["depth"]->release();
 
+    m_shaderPrograms["depth"]->bind();
+    m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["depth"]->setUniformValue("objTrans", -10.f, -1.25f, -10.f);
+
+    this->drawFloor();
+    m_shaderPrograms["depth"]->release();
+
     // Disable culling, depth testing and cube maps
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST); //why?
@@ -369,8 +391,8 @@ void GLWidget::renderScene() {
     glActiveTexture(GL_TEXTURE0);
 
     float light_theta = (m_clock.elapsed() % 5000) / (5000.f/(2*M_PI));
-    m_light1Pos.x = 15.f * cos(light_theta);
-    m_light1Pos.y = 15.f * sin(light_theta);
+    //m_light1Pos.x = 15.f * cos(light_theta);
+    //m_light1Pos.y = 15.f + 15.f * sin(light_theta);
 
     m_shaderPrograms["normalmapping"]->bind();
     m_shaderPrograms["normalmapping"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
@@ -391,11 +413,63 @@ void GLWidget::renderScene() {
 
     m_shaderPrograms["normalmapping"]->release();
 
+
+    //Draw the floor
+    glEnable(GL_TEXTURE_2D);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_textures["floor_diffuse"]);
+    glActiveTexture(GL_TEXTURE0);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_textures["floor_normal"]);
+    glActiveTexture(GL_TEXTURE0);
+
+    m_shaderPrograms["normalmapping"]->bind();
+    m_shaderPrograms["normalmapping"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["normalmapping"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
+    m_shaderPrograms["normalmapping"]->setUniformValue("diffuseTexture", GLint(1));
+    m_shaderPrograms["normalmapping"]->setUniformValue("normalTexture", GLint(2));
+    m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
+
+    this->drawFloor();
+
+    m_shaderPrograms["normalmapping"]->release();
+
     // Disable culling, depth testing and cube maps
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_CUBE_MAP,0);
     glDisable(GL_TEXTURE_CUBE_MAP);
+}
+
+/**
+  Draws the floor.
+**/
+void GLWidget::drawFloor() {
+    glPushMatrix();
+    glTranslatef(-10.f, -1.25f, -10.f);
+    //glScalef(20.f, 0.f, 20.f);
+
+    glBegin(GL_QUADS);
+    glNormal3f(0.f, 1.f, 0.f);
+    glTexCoord2f(0.f, 0.f);
+    glVertex3f(0.f, 0.f, 0.f);
+
+    glNormal3f(0.f, 1.f, 0.f);
+    glTexCoord2f(0.f, 1.f);
+    glVertex3f(0.f, 0.f, 20.f);
+
+    glNormal3f(0.f, 1.f, 0.f);
+    glTexCoord2f(1.f, 1.f);
+    glVertex3f(20.f, 0.f, 20.f);
+
+    glNormal3f(0.f, 1.f, 0.f);
+    glTexCoord2f(1.f, 0.f);
+    glVertex3f(20.f, 0.f, 0.f);
+
+    glEnd();
+    glPopMatrix();
 }
 
 /**

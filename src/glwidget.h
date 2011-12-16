@@ -48,6 +48,7 @@ protected:
     void renderScene();
     void renderDepthScene();
     void paintText();
+    void drawFloor();
 
 private:
     QTimer m_timer;
