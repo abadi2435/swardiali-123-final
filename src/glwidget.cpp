@@ -39,6 +39,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
     m_light1Pos = Vector3(0.f, 15.f, 30.f);
 
     m_useNormalMapping = true;
+    m_drawDepthMap = false;
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -94,7 +95,7 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_mesh = ResourceLoader::loadObjModel("/course/cs123/data/mesh/sphere.obj");
+    m_mesh = ResourceLoader::loadObjModel("./models/sphere.obj");
     cout << "Loaded object mesh..." << endl;
 
     m_skybox = ResourceLoader::loadSkybox();
@@ -267,40 +268,44 @@ void GLWidget::paintGL()
     renderDepthScene();
     m_framebufferObjects["fbo_0"]->release();
 
-//    applyOrthogonalCamera(width, height);
-//    glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
-//    renderTexturedQuad(width, height, true);
-//    glBindTexture(GL_TEXTURE_2D, 0);
+    // User can press "d" to toggle drawing the depth map instead of the final scene
+    if (m_drawDepthMap) {
+        applyOrthogonalCamera(width, height);
+        glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
+        renderTexturedQuad(width, height, true);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    } else {
 
-    // Render the normal mapped scene to framebuffer1
-    m_framebufferObjects["fbo_1"]->bind();
-    applyPerspectiveCamera(width, height);
-    renderScene();
-    m_framebufferObjects["fbo_1"]->release();
+        // Render the normal mapped scene to framebuffer1
+        m_framebufferObjects["fbo_1"]->bind();
+        applyPerspectiveCamera(width, height);
+        renderScene();
+        m_framebufferObjects["fbo_1"]->release();
 
-    // Bind the depth of field blur shader passing it the window's height and width
-    m_shaderPrograms["dblur"]->bind();
-    m_shaderPrograms["dblur"]->setUniformValue("height", (float) height);
-    m_shaderPrograms["dblur"]->setUniformValue("width", (float) width);
+        // Bind the depth of field blur shader passing it the window's height and width
+        m_shaderPrograms["dblur"]->bind();
+        m_shaderPrograms["dblur"]->setUniformValue("height", (float) height);
+        m_shaderPrograms["dblur"]->setUniformValue("width", (float) width);
 
-    glActiveTexture(GL_TEXTURE3); // Bind the depth texture to slot 3
-    glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
-    glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE3); // Bind the depth texture to slot 3
+        glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
+        glActiveTexture(GL_TEXTURE0);
 
-    glActiveTexture(GL_TEXTURE4); // Bind the regular scene texture to slot 4
-    glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
-    glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE4); // Bind the regular scene texture to slot 4
+        glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
+        glActiveTexture(GL_TEXTURE0);
 
-    // Pass the depth map and the regular scene to the shader
-    m_shaderPrograms["dblur"]->setUniformValue("depthtex", GLint(3));
-    m_shaderPrograms["dblur"]->setUniformValue("tex", GLint(4));
+        // Pass the depth map and the regular scene to the shader
+        m_shaderPrograms["dblur"]->setUniformValue("depthtex", GLint(3));
+        m_shaderPrograms["dblur"]->setUniformValue("tex", GLint(4));
 
-    // Draw a quad to the screen
-    applyOrthogonalCamera(width,height);
-    renderTexturedQuad(width, height, true);
+        // Draw a quad to the screen
+        applyOrthogonalCamera(width,height);
+        renderTexturedQuad(width, height, true);
 
-    // Release the shader
-    m_shaderPrograms["dblur"]->release();
+        // Release the shader
+        m_shaderPrograms["dblur"]->release();
+    }
 
     // Display the FPS
     paintText();
@@ -329,29 +334,29 @@ void GLWidget::renderDepthScene() { //this is for the depth
     glActiveTexture(GL_TEXTURE0);
     m_shaderPrograms["depth"]->bind();
     m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["depth"]->setUniformValue("objTrans", -1.25f, 0.f, 0.f);
 
+    // Draw the first object
     glPushMatrix();
     glTranslatef(-1.25f,0.f,0.f);
+    //glScalef(5.0f, 5.0f, 5.0f);
+    //glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
-    m_shaderPrograms["depth"]->release();
 
-    m_shaderPrograms["depth"]->bind();
-    m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["depth"]->setUniformValue("objTrans", 1.25f, 0.f, 0.f);
-
+    // Draw the second object
     glPushMatrix();
     glTranslatef(1.25f,0.f,0.f);
+    //glScalef(5.0f, 5.0f, 5.0f);
+    glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
-    m_shaderPrograms["depth"]->release();
 
-    m_shaderPrograms["depth"]->bind();
-    m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["depth"]->setUniformValue("objTrans", -10.f, -1.25f, -10.f);
-
+    // Draw the floor
+    glPushMatrix();
+    glTranslatef(-10.f, -1.25f, -10.f);
+    glScalef(20.f, 0.f, 20.f);
     this->drawFloor();
+    glPopMatrix();
     m_shaderPrograms["depth"]->release();
 
     // Disable culling, depth testing and cube maps
@@ -403,11 +408,15 @@ void GLWidget::renderScene() {
 
     glPushMatrix();
     glTranslatef(-1.25f, 0.f, 0.f);
+    //glScalef(5.0f, 5.0f, 5.0f);
+    //glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
 
     glPushMatrix();
     glTranslatef(1.25f,0.f,0.f);
+    //glScalef(5.0f, 5.0f, 5.0f);
+    glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
 
@@ -432,7 +441,11 @@ void GLWidget::renderScene() {
     m_shaderPrograms["normalmapping"]->setUniformValue("normalTexture", GLint(2));
     m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
 
+    glPushMatrix();
+    glTranslatef(-10.f, -1.25f, -10.f);
+    glScalef(20.f, 0.f, 20.f);
     this->drawFloor();
+    glPopMatrix();
 
     m_shaderPrograms["normalmapping"]->release();
 
@@ -447,10 +460,6 @@ void GLWidget::renderScene() {
   Draws the floor.
 **/
 void GLWidget::drawFloor() {
-    glPushMatrix();
-    glTranslatef(-10.f, -1.25f, -10.f);
-    //glScalef(20.f, 0.f, 20.f);
-
     glBegin(GL_QUADS);
     glNormal3f(0.f, 1.f, 0.f);
     glTexCoord2f(0.f, 0.f);
@@ -458,18 +467,17 @@ void GLWidget::drawFloor() {
 
     glNormal3f(0.f, 1.f, 0.f);
     glTexCoord2f(0.f, 1.f);
-    glVertex3f(0.f, 0.f, 20.f);
+    glVertex3f(0.f, 0.f, 1.f);
 
     glNormal3f(0.f, 1.f, 0.f);
     glTexCoord2f(1.f, 1.f);
-    glVertex3f(20.f, 0.f, 20.f);
+    glVertex3f(1.f, 0.f, 1.f);
 
     glNormal3f(0.f, 1.f, 0.f);
     glTexCoord2f(1.f, 0.f);
-    glVertex3f(20.f, 0.f, 0.f);
+    glVertex3f(1.f, 0.f, 0.f);
 
     glEnd();
-    glPopMatrix();
 }
 
 /**
@@ -570,6 +578,11 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             m_useNormalMapping = !m_useNormalMapping;
             break;
         }
+        case Qt::Key_D:
+        {
+            m_drawDepthMap = !m_drawDepthMap;
+            break;
+        }
     }
 }
 
@@ -591,4 +604,5 @@ void GLWidget::paintText()
     renderText(10, 20, "FPS: " + QString::number((int) (m_prevFps)), m_font);
     renderText(10, 35, "S: Save screenshot", m_font);
     renderText(10, 50, "N: Toggle normal mapping", m_font);
+    renderText(10, 65, "D: Draw depth map on/off", m_font);
 }

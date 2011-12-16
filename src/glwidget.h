@@ -61,6 +61,7 @@ private:
     Vector3 m_light1Pos;
 
     bool m_useNormalMapping;
+    bool m_drawDepthMap;
 
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs

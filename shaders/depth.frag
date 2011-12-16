@@ -1,5 +1,4 @@
 varying vec3 objPosition;
-uniform vec3 objTrans;
 uniform vec3 camPosition;
     
 void main (void)
@@ -21,7 +20,7 @@ void main (void)
     */
 
     //note that de isnt necessarily between 0 and 1.
-    float de = length(objPosition + objTrans - camPosition);
+    float de = length(objPosition - camPosition);
     float maxDepth = 10.0;
     de = clamp(de / maxDepth, 0.0, 1.0);
 
