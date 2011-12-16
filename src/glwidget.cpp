@@ -38,6 +38,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
 
     m_light1Pos = Vector3(0.f, 0.f, 30.f);
 
+    m_useNormalMapping = true;
+
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
 
@@ -375,6 +377,7 @@ void GLWidget::renderScene() {
     m_shaderPrograms["normalmapping"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_shaderPrograms["normalmapping"]->setUniformValue("diffuseTexture", GLint(1));
     m_shaderPrograms["normalmapping"]->setUniformValue("normalTexture", GLint(2));
+    m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
 
     glPushMatrix();
     glTranslatef(-1.25f, 0.f, 0.f);
@@ -481,11 +484,18 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
     switch(event->key())
     {
         case Qt::Key_S:
-        QImage qi = grabFrameBuffer(false);
-        QString filter;
-        QString fileName = QFileDialog::getSaveFileName(this, tr("Save Image"), "", tr("PNG Image (*.png)"), &filter);
-        qi.save(QFileInfo(fileName).absoluteDir().absolutePath() + "/" + QFileInfo(fileName).baseName() + ".png", "PNG", 100);
-        break;
+        {
+            QImage qi = grabFrameBuffer(false);
+            QString filter;
+            QString fileName = QFileDialog::getSaveFileName(this, tr("Save Image"), "", tr("PNG Image (*.png)"), &filter);
+            qi.save(QFileInfo(fileName).absoluteDir().absolutePath() + "/" + QFileInfo(fileName).baseName() + ".png", "PNG", 100);
+            break;
+        }
+        case Qt::Key_N:
+        {
+            m_useNormalMapping = !m_useNormalMapping;
+            break;
+        }
     }
 }
 
@@ -506,4 +516,5 @@ void GLWidget::paintText()
     // QGLWidget's renderText takes xy coordinates, a string, and a font
     renderText(10, 20, "FPS: " + QString::number((int) (m_prevFps)), m_font);
     renderText(10, 35, "S: Save screenshot", m_font);
+    renderText(10, 50, "N: Toggle normal mapping", m_font);
 }

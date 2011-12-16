@@ -1,5 +1,6 @@
 uniform sampler2D normalTexture;
 uniform sampler2D diffuseTexture;
+uniform bool useNormalMapping;
 //const vec3 light_pos = vec3(0.,0.,30.);
 const vec4 light_color = vec4(1.,1.,1.,1.);
 const int spec_exp = 5;
@@ -7,13 +8,20 @@ const int spec_exp = 5;
 uniform vec3 cameraPosition;
 //varying vec3 norm;
 varying vec3 pos;
+varying vec3 normal;
 varying vec3 inc_light;
 
 void main() {   
     
   vec4 diffuse;
     
-  vec3 norm = texture2D(normalTexture, gl_TexCoord[0].st).rgb * 2.0 - 1.0;
+  vec3 norm; 
+  
+  if (useNormalMapping) {
+    norm = texture2D(normalTexture, gl_TexCoord[0].st).rgb * 2.0 - 1.0;
+  } else {
+    norm = normal;
+  }
     
   //vec3 inc_light_vec = light_pos - pos;
   vec3 inc_light_vec = normalize(inc_light);

@@ -59,6 +59,8 @@ private:
 
     Vector3 m_light1Pos;
 
+    bool m_useNormalMapping;
+
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
     QHash<QString, QGLFramebufferObject *> m_framebufferObjects; // hash map of all framebuffer objects
