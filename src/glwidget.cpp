@@ -104,13 +104,7 @@ void GLWidget::initializeResources()
     loadDepthCubeMap();
     cout << "Loaded depth cube map..." << m_depthCubeMap << endl;
 
-    m_diffuseTex = ResourceLoader::loadTexture("./textures/concrete.jpg");
-    if (m_diffuseTex == -1) {cout << "Failed to load diffuse texture..." << endl;}
-    else {cout << "Loaded diffuse texture... " << m_diffuseTex << endl;}
-
-    m_normalMapTex = ResourceLoader::loadTexture("./textures/rough_normal.jpg");
-    if (m_normalMapTex == -1) {cout << "Failed to load normal map texture..." << endl;}
-    else {cout << "Loaded normal map texture... " << m_normalMapTex << endl;}
+    loadTextures();
 
     createShaderPrograms();
     cout << "Loaded shader programs..." << endl;
@@ -165,6 +159,23 @@ void GLWidget::createShaderPrograms()
 
     m_shaderPrograms["depth"] = ResourceLoader::newShaderProgram(ctx, "./shaders/depth.vert",
                                                                  "./shaders/depth.frag");
+}
+
+/**
+  Load all the textures.
+**/
+void GLWidget::loadTextures() {
+    QString filepath;
+
+    filepath = "./textures/concrete.jpg";
+    m_textures["obj_diffuse"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["obj_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./textures/rough_normal.jpg";
+    m_textures["obj_normal"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["obj_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 }
 
 /**
@@ -348,11 +359,11 @@ void GLWidget::renderScene() {
     glEnable(GL_TEXTURE_2D);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_diffuseTex);
+    glBindTexture(GL_TEXTURE_2D, m_textures["obj_diffuse"]);
     glActiveTexture(GL_TEXTURE0);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_normalMapTex);
+    glBindTexture(GL_TEXTURE_2D, m_textures["obj_normal"]);
     glActiveTexture(GL_TEXTURE0);
 
     float light_theta = (m_clock.elapsed() % 5000) / (5000.f/(2*M_PI));
@@ -362,7 +373,7 @@ void GLWidget::renderScene() {
     m_shaderPrograms["normalmapping"]->bind();
     m_shaderPrograms["normalmapping"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
     m_shaderPrograms["normalmapping"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
-    m_shaderPrograms["normalmapping"]->setUniformValue("brickTexture", GLint(1)); // need to use GLint(x) instead of GL_TEXTUREx for some reason...
+    m_shaderPrograms["normalmapping"]->setUniformValue("diffuseTexture", GLint(1));
     m_shaderPrograms["normalmapping"]->setUniformValue("normalTexture", GLint(2));
 
     glPushMatrix();

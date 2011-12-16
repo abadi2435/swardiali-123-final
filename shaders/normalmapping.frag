@@ -1,5 +1,5 @@
 uniform sampler2D normalTexture;
-uniform sampler2D brickTexture;
+uniform sampler2D diffuseTexture;
 //const vec3 light_pos = vec3(0.,0.,30.);
 const vec4 light_color = vec4(1.,1.,1.,1.);
 const int spec_exp = 5;
@@ -34,6 +34,6 @@ void main() {
   }
   //vec4 tex_color = 0.5 * texture2D(normalTexture, gl_TexCoord[0].st) + 
   //		   0.5 * texture2D(brickTexture, gl_TexCoord[0].st);
-  vec4 tex_color = texture2D(brickTexture, gl_TexCoord[0].st);
+  vec4 tex_color = texture2D(diffuseTexture, gl_TexCoord[0].st);
   gl_FragColor = (diffuse + specular) * vec4(tex_color.rgb,1.0);
 }

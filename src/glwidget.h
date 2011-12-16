@@ -39,6 +39,7 @@ protected:
     void loadDepthCubeMap();
     void createShaderPrograms();
     void createFramebufferObjects(int width, int height);
+    void loadTextures();
 
     // Drawing code
     void applyOrthogonalCamera(float width, float height);
@@ -65,8 +66,9 @@ private:
     GLuint m_skybox; // skybox call list ID
     GLuint m_cubeMap; // cubeMap texture ID
     GLuint m_depthCubeMap; // all white cubeMap texture ID
-    GLuint m_diffuseTex; // diffuse texture ID
-    GLuint m_normalMapTex; // normal map texture ID
+
+    QHash<QString, GLuint> m_textures; // hash map of all the texture IDs
+
     QFont m_font; // font for rendering text
 
 };
