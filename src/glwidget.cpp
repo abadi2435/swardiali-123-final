@@ -24,8 +24,8 @@ static const int MAX_FPS = 120;
   Constructor.  Initialize all member variables here.
  **/
 GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
-    m_timer(this), m_prevTime(0), m_prevFps(0.f), m_fps(0.f),
-    m_font("Deja Vu Sans Mono", 8, 4)
+m_timer(this), m_prevTime(0), m_prevFps(0.f), m_fps(0.f),
+m_font("Deja Vu Sans Mono", 8, 4)
 {
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
@@ -40,8 +40,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
 
     m_useNormalMapping = true;
     m_drawDepthMap = false;
-    m_focalLength = 10.0;
-
+    m_focalLength = 5.0;
+    m_zfocus = .5;
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
 
@@ -96,7 +96,7 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_mesh = ResourceLoader::loadObjModel("./models/orange.obj");
+    m_mesh = ResourceLoader::loadObjModel("./models/chair/dchair_obj.obj");
     cout << "Loaded object mesh..." << endl;
 
     m_skybox = ResourceLoader::loadSkybox();
@@ -287,6 +287,7 @@ void GLWidget::paintGL()
         m_shaderPrograms["dblur"]->bind();
         m_shaderPrograms["dblur"]->setUniformValue("height", (float) height);
         m_shaderPrograms["dblur"]->setUniformValue("width", (float) width);
+        m_shaderPrograms["dblur"]->setUniformValue("focalLength", (float) m_focalLength);
 
         glActiveTexture(GL_TEXTURE3); // Bind the depth texture to slot 3
         glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
@@ -334,8 +335,10 @@ void GLWidget::renderDepthScene() { //this is for the depth
     // Render the dragon with the refraction shader bound
     glActiveTexture(GL_TEXTURE0);
     m_shaderPrograms["depth"]->bind();
+
     m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
     m_shaderPrograms["depth"]->setUniformValue("focalLength", m_focalLength);
+    m_shaderPrograms["depth"]->setUniformValue("zfocus", m_zfocus);
 
     // Draw the first object
     glPushMatrix();
@@ -567,7 +570,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
 {
     switch(event->key())
     {
-        case Qt::Key_S:
+    case Qt::Key_S:
         {
             QImage qi = grabFrameBuffer(false);
             QString filter;
@@ -575,24 +578,46 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             qi.save(QFileInfo(fileName).absoluteDir().absolutePath() + "/" + QFileInfo(fileName).baseName() + ".png", "PNG", 100);
             break;
         }
-        case Qt::Key_N:
+    case Qt::Key_N:
         {
             m_useNormalMapping = !m_useNormalMapping;
             break;
         }
-        case Qt::Key_D:
+    case Qt::Key_D:
         {
             m_drawDepthMap = !m_drawDepthMap;
             break;
         }
-        case Qt::Key_Up:
+    case Qt::Key_Z:
         {
-            m_focalLength += 0.1;
+            m_zfocus +=.005;
+            if (m_zfocus > 1){
+                m_zfocus = 1;
+            }
             break;
         }
-        case Qt::Key_Down:
+    case Qt::Key_A:
+        {
+            m_zfocus -=.005;
+            if (m_zfocus < 0){
+                m_zfocus = 0;
+            }
+            break;
+        }
+    case Qt::Key_Up:
+        {
+            m_focalLength += 0.1;
+            if (m_focalLength > 12) {
+                m_focalLength = 12;
+            }
+            break;
+        }
+    case Qt::Key_Down:
         {
             m_focalLength -= 0.1;
+            if (m_focalLength < 0) {
+                m_focalLength = 0;
+            }
             break;
         }
     }
@@ -608,8 +633,8 @@ void GLWidget::paintText()
     // Combine the previous and current framerate
     if (m_fps >= 0 && m_fps < 1000)
     {
-       m_prevFps *= 0.95f;
-       m_prevFps += m_fps * 0.05f;
+        m_prevFps *= 0.95f;
+        m_prevFps += m_fps * 0.05f;
     }
 
     // QGLWidget's renderText takes xy coordinates, a string, and a font
@@ -618,4 +643,5 @@ void GLWidget::paintText()
     renderText(10, 50, "N: Toggle normal mapping", m_font);
     renderText(10, 65, "D: Draw depth map on/off", m_font);
     renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
+    renderText(10, 95, "A/Z: Change focus place = " + QString::number(m_zfocus), m_font);
 }

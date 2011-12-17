@@ -63,6 +63,7 @@ private:
     bool m_useNormalMapping;
     bool m_drawDepthMap;
     float m_focalLength;
+    float m_zfocus;
 
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs

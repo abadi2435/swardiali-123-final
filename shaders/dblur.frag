@@ -2,19 +2,17 @@ uniform sampler2D depthtex;
 uniform sampler2D tex; 
 uniform float height;
 uniform float width;   
+uniform float focalLength;
 
 void main(void) { 
     float blur = texture2D(depthtex, gl_TexCoord[0].xy).y;
     float depth = texture2D(depthtex, gl_TexCoord[0].xy).x;
     vec4 v[24];
     
-    float maxCoC = 10.0;
+    float maxCoC = 5; //This changes width of blur
     
-    float dx = blur*blur * maxCoC / width;
-    float dy = blur*blur * maxCoC / height;
-   
-    //float dx= 0.05;
-    //float dy = dx;
+    float dx = blur * blur * maxCoC / width;
+    float dy = blur * blur * maxCoC / height;
     
     v[0] = vec4(-0.326212 * dx, -0.40581 * dy, 0.0, 0.0); 
     v[1] = vec4(-0.840144 * dx, -0.07358 * dy, 0.0, 0.0);
@@ -28,7 +26,7 @@ void main(void) {
     v[9] = vec4(0.89642 * dx, 0.412458 * dy, 0.0, 0.0);
     v[10] = vec4(-0.32194 * dx, -0.932615 * dy, 0.0, 0.0);
     v[11] = vec4(-0.791559 * dx, -0.59771 * dy, 0.0, 0.0);
-    
+   
     v[12] = vec4(-0.876212 * dx, 0.8581 * dy, 0.0, 0.0); 
     v[13] = vec4(-0.320144 * dx, 0.23358 * dy, 0.0, 0.0);
     v[14] = vec4(-0.435914 * dx, 0.857136 * dy, 0.0, 0.0);
@@ -42,18 +40,29 @@ void main(void) {
     v[22] = vec4(0.52194 * dx, -0.932615 * dy, 0.0, 0.0);
     v[23] = vec4(0.791559 * dx, -0.59771 * dy, 0.0, 0.0);
     
-    float numSamples = 1;
-    vec4 sum = texture2D(tex, gl_TexCoord[0].st);
+
+    
+    float numSamples = 0;
+    vec4 initial = texture2D(tex, gl_TexCoord[0].st);
+    vec4 sum = vec4(0,0,0,0);
     for (int i= 0; i<24; i++){
 	vec4 sample = texture2D(tex, gl_TexCoord[0].st + v[i]);
 	float sampleDepth = texture2D(depthtex, gl_TexCoord[0].st + v[i]).x;
-	if (abs(depth - sampleDepth) < 0.3){
-	    sum += sample;
-	    numSamples += 1;
+	float diff = abs(depth - sampleDepth);
+	if (depth < sampleDepth || (diff < .05/focalLength)){
+		float maxdist = sqrt(dx*dx + dy*dy);
+	        float sampledist = distance(vec2(0,0), v[i]/maxdist);
+		float factor = pow(sampledist, 3.0);
+		sum += (1.0-factor)*sample + factor*initial;
+		numSamples += 1;
 	}
     }
-    
-    
-    sum = sum/numSamples;
-    gl_FragColor = sum;   
+
+    if (numSamples == 0){
+	gl_FragColor = texture2D(tex, gl_TexCoord[0].st);
+    }
+    else {
+	sum = sum/numSamples;
+	gl_FragColor = sum;   
+    }
 }
