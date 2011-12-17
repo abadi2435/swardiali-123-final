@@ -96,7 +96,7 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_mesh = ResourceLoader::loadObjModel("./models/chair/dchair_obj.obj");
+    m_mesh = ResourceLoader::loadObjModel("./models/fighter/GhoulOBJ.obj");
     cout << "Loaded object mesh..." << endl;
 
     m_skybox = ResourceLoader::loadSkybox();
@@ -171,7 +171,7 @@ void GLWidget::createShaderPrograms()
 void GLWidget::loadTextures() {
     QString filepath;
 
-    filepath = "./textures/concrete.jpg";
+    filepath = "./models/fighter/texture/ghoul_map_jpg.jpg";
     m_textures["obj_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["obj_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
@@ -349,12 +349,12 @@ void GLWidget::renderDepthScene() { //this is for the depth
     glPopMatrix();
 
     // Draw the second object
-    glPushMatrix();
-    glTranslatef(1.25f,0.f,0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
-    glRotatef(90.f, 1.0f, 0.f, 0.f);
-    glCallList(m_mesh.idx);
-    glPopMatrix();
+//    glPushMatrix();
+//    glTranslatef(1.25f,0.f,0.f);
+//    glScalef(5.0f, 5.0f, 5.0f);
+//    glRotatef(90.f, 1.0f, 0.f, 0.f);
+//    glCallList(m_mesh.idx);
+//    glPopMatrix();
 
     // Draw the floor
     glPushMatrix();
@@ -418,12 +418,12 @@ void GLWidget::renderScene() {
     glCallList(m_mesh.idx);
     glPopMatrix();
 
-    glPushMatrix();
-    glTranslatef(1.25f,0.f,0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
-    glRotatef(90.f, 1.0f, 0.f, 0.f);
-    glCallList(m_mesh.idx);
-    glPopMatrix();
+//    glPushMatrix();
+//    glTranslatef(1.25f,0.f,0.f);
+//    glScalef(5.0f, 5.0f, 5.0f);
+//    glRotatef(90.f, 1.0f, 0.f, 0.f);
+//    glCallList(m_mesh.idx);
+//    glPopMatrix();
 
     m_shaderPrograms["normalmapping"]->release();
 
@@ -505,6 +505,12 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
 {
     m_prevMousePos.x = event->x();
     m_prevMousePos.y = event->y();
+
+    QImage image = m_framebufferObjects["fbo_0"]->toImage();
+    QRgb color = image.pixel(m_prevMousePos.x, m_prevMousePos.y);
+    cout<<qRed((float) (color));
+    m_zfocus = qRed((float) ((float)color))/255.0;
+
 }
 
 /**
@@ -616,7 +622,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
         {
             m_focalLength -= 0.1;
             if (m_focalLength < 0) {
-                m_focalLength = 0;
+                m_focalLength = 0.1;
             }
             break;
         }
