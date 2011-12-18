@@ -1,0 +1,20 @@
+newmtl paper1
+Ka 0 0 0
+Kd 0.784314 0.784314 0.784314
+Ks 0.8 0.8 0.8
+Ni 1
+Ns 100
+Tf 1 1 1
+d 1
+map_Kd paper1.tga
+
+newmtl paper2
+Ka 0 0 0
+Kd 0.784314 0.784314 0.784314
+Ks 0.8 0.8 0.8
+Ni 1
+Ns 100
+Tf 1 1 1
+d 1
+map_Kd paper2.tga
+

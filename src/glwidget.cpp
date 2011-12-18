@@ -108,8 +108,11 @@ void GLWidget::initializeResources()
     createFramebufferObjects(width(), height());
     cout << "Loaded framebuffer objects..." << endl;
 
+    m_inactiveScene = new TableScene(this);
     m_activeScene = new SpaceScene(this);
     m_activeScene->initializeResources();
+    m_inactiveScene->initializeResources();
+
     cout<< "Loaded active scene..." << endl;
 
     cout << " --- Finish Loading Resources ---" << endl;
@@ -324,7 +327,9 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
     if (event->button() ==  2) {
         QImage image = m_framebufferObjects["fbo_0"]->toImage();
         QRgb color = image.pixel(m_prevMousePos.x, m_prevMousePos.y);
-        m_zfocus = qRed((float) ((float)color))/255.0;
+        if (qGreen((float) ((float)color))/255.0 > 0.2f) {                                                           //if depth away is close to 0, black and sharp.. clicking sould stay sharp
+            m_zfocus = qRed((float) ((float)color))/255.0;
+        }
     }
 }
 
@@ -461,6 +466,11 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             m_paused = !m_paused;
             break;
         }
+    case Qt::Key_S:
+        Scene* temp = m_activeScene;
+        m_activeScene = m_inactiveScene;
+        m_inactiveScene = temp;
+        break;
     }
 }
 
@@ -489,6 +499,7 @@ void GLWidget::paintText()
         renderText(10, 110, "Up/Down: Change focal distance = " + QString::number(m_zfocus), m_font);
         renderText(10, 125, "F: Toggle fly mode", m_font);
         renderText(10, 140, "P: Pause/Unpause", m_font);
+        renderText(10, 155, "S: Toggle Scene", m_font);
     } else {
         renderText(10, 20, "Press H for help.", m_font);
     }
