@@ -97,6 +97,7 @@ private:
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
     QHash<QString, QGLFramebufferObject *> m_framebufferObjects; // hash map of all framebuffer objects
     Model m_mesh; // object model
+    Model m_mesh2; //second object model
     GLuint m_skybox; // skybox call list ID
     GLuint m_cubeMap; // cubeMap texture ID
     GLuint m_depthCubeMap; // all white cubeMap texture ID

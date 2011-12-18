@@ -132,6 +132,7 @@ void GLWidget::initializeResources()
 void GLWidget::loadCubeMap()
 {
     QList<QFile *> fileList;
+
     fileList.append(new QFile("./textures/space/posx.jpg"));
     fileList.append(new QFile("./textures/space/negx.jpg"));
     fileList.append(new QFile("./textures/space/posy.jpg"));
@@ -213,10 +214,15 @@ void GLWidget::loadTextures() {
     if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 
-    filepath = "./textures/floor_normal.jpg";
-    m_textures["floor_normal"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["floor_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+//    filepath = "./textures/floor_diffuse.jpg";
+//    m_textures["floor_diffuse"] = ResourceLoader::loadTexture(filepath);
+//    if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+//    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+//
+//    filepath = "./textures/floor_normal.jpg";
+//    m_textures["floor_normal"] = ResourceLoader::loadTexture(filepath);
+//    if (m_textures["floor_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+//    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 }
 
 /**
@@ -414,7 +420,6 @@ void GLWidget::renderDepthScene() { //this is for the depth
     m_shaderPrograms["depth"]->setUniformValue("focalLength", m_focalLength);
     m_shaderPrograms["depth"]->setUniformValue("zfocus", m_zfocus);
 
-
     for (int i = 0; i < m_numModels; i++) {
         glPushMatrix();
         glTranslatef(m_models[i].translate.x, m_models[i].translate.y, m_models[i].translate.z);
@@ -446,6 +451,7 @@ void GLWidget::renderDepthScene() { //this is for the depth
     glScalef(20.f, 0.f, 20.f);
     this->drawFloor();
     glPopMatrix();*/
+
     m_shaderPrograms["depth"]->release();
 
     // Disable culling, depth testing and cube maps
@@ -530,7 +536,7 @@ void GLWidget::renderScene() {
     glEnable(GL_TEXTURE_2D);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_textures["floor_diffuse"]);
+    glBindTexture(GL_TEXTURE_2D, m_textures["piggy"]);
     glActiveTexture(GL_TEXTURE0);
 
     glActiveTexture(GL_TEXTURE2);
@@ -545,9 +551,10 @@ void GLWidget::renderScene() {
     m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
 
     glPushMatrix();
-    glTranslatef(-10.f, -1.25f, -10.f);
-    glScalef(20.f, 0.f, 20.f);
-    this->drawFloor();
+    glTranslatef(1.25f,-5.f,0.f);
+    glScalef(5.0f, 5.0f, 5.0f);
+    glRotatef(0.f, 1.0f, 0.f, 0.f);
+    glCallList(m_mesh2.idx);
     glPopMatrix();
 
     m_shaderPrograms["normalmapping"]->release(); */
@@ -753,5 +760,6 @@ void GLWidget::paintText()
     renderText(10, 65, "D: Draw depth map on/off", m_font);
     renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
     renderText(10, 95, "B: Toggle depth of field", m_font);
-    renderText(10, 110, "A/Z: Change focus place = " + QString::number(m_zfocus), m_font);
+    renderText(10, 110, "A/Z: Change focus plane = " + QString::number(m_zfocus), m_font);
+
 }
