@@ -124,7 +124,7 @@ void SpaceScene::randomizeModelTransformations() {
         m_meteors[i]->dr = randDecimal() * 0.15;
     }
     for (int i = m_meteors.size()/2; i < m_meteors.size(); i++) {
-        m_meteors[i]->translate = Vector3(MAX_MODELS + MAX_MODELS/2 - 2*i, 5*randDecimal() - 1, 5*randDecimal());
+        m_meteors[i]->translate = Vector3(MAX_MODELS + MAX_MODELS/2 - 2*i, 5*randDecimal() - 1, m_meteors[i-MAX_MODELS/2]->translate.z + 2*randDecimal() + 5);
         float scaleFactor = 0.5*randDecimal() + 0.75;
         m_meteors[i]->scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
         m_meteors[i]->rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
