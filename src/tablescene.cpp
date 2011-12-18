@@ -9,13 +9,13 @@ static const int MAX_MODELS = 9;
 
 TableScene::TableScene(GLWidget* widget) : Scene(widget)
 {
-   m_light1Pos = Vector3(-13.f, 31.f, 35.f);
+    m_light1Pos = Vector3(-13.f, 31.f, 35.f);
 }
 
 TableScene::~TableScene(){
     const_cast<QGLContext *>(m_widget->context())->deleteTexture(m_cubeMap);
     foreach (TransformedModel* tm, m_allModels)
-                glmDelete(tm->model.model);
+        glmDelete(tm->model.model);
 }
 
 void TableScene::initializeResources()
@@ -123,19 +123,6 @@ void TableScene::loadModels() {
     m_allModels.push_back(&m_orange2);
 }
 
-void TableScene::randomizeModelTransformations() {
-}
-
-void TableScene::updateModelPositions() {
-}
-
-float TableScene::randDecimal() {
-    return (rand()%1000)/1000.f;
-}
-
-void TableScene::moveSpaceShip() {
-}
-
 /**
   Renders the scene.  May be called multiple times by paintGL() if necessary.
 **/
@@ -175,7 +162,7 @@ void TableScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_map", GLint(2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("specular_map", GLint(3));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", m_widget->m_useNormalMapping);
-        m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.3));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ka", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("kd", GLfloat(0.5));
@@ -197,19 +184,18 @@ void TableScene::renderScene() {
 
     m_widget->m_shaderPrograms["normalmapping"]->release();
 
-
     //----------
     
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_textures["newspaper_diffuse"]);
     glActiveTexture(GL_TEXTURE0);this->
 
-            m_widget->m_shaderPrograms["normalmapping"]->bind();
+    m_widget->m_shaderPrograms["normalmapping"]->bind();
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_widget->m_camera.getCameraPosition().x, m_widget->m_camera.getCameraPosition().y, m_widget->m_camera.getCameraPosition().z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
-        m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ka", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("kd", GLfloat(0.5));
@@ -231,12 +217,12 @@ void TableScene::renderScene() {
     glBindTexture(GL_TEXTURE_2D, m_textures["table_diffuse"]);
     glActiveTexture(GL_TEXTURE0);this->
 
-    m_widget->m_shaderPrograms["normalmapping"]->bind();
+            m_widget->m_shaderPrograms["normalmapping"]->bind();
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_widget->m_camera.getCameraPosition().x, m_widget->m_camera.getCameraPosition().y, m_widget->m_camera.getCameraPosition().z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
-        m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ka", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("kd", GLfloat(0.5));
@@ -257,12 +243,12 @@ void TableScene::renderScene() {
     glBindTexture(GL_TEXTURE_2D, m_textures["matchbox_diffuse"]);
     glActiveTexture(GL_TEXTURE0);this->
 
-    m_widget->m_shaderPrograms["normalmapping"]->bind();
+            m_widget->m_shaderPrograms["normalmapping"]->bind();
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_widget->m_camera.getCameraPosition().x, m_widget->m_camera.getCameraPosition().y, m_widget->m_camera.getCameraPosition().z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
-        m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ka", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("kd", GLfloat(0.5));
@@ -288,7 +274,7 @@ void TableScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
-        m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, .65, 1);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ka", GLfloat(0.2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("kd", GLfloat(0.5));
@@ -310,9 +296,4 @@ void TableScene::renderScene() {
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_CUBE_MAP,0);
     glDisable(GL_TEXTURE_CUBE_MAP);
-}
-
-void TableScene::moveModels() {
-    this->updateModelPositions();
-    this->moveSpaceShip();
 }
