@@ -488,7 +488,7 @@ void GLWidget::paintText()
         renderText(10, 65, "D: Draw depth map on/off", m_font);
         renderText(10, 80, "B: Toggle depth of field", m_font);
         renderText(10, 95, "Left/Right: Change depth of field size = " + QString::number(m_focalLength), m_font);
-        renderText(10, 110, "Up/Down: Change focus length = " + QString::number(m_zfocus), m_font);
+        renderText(10, 110, "Up/Down: Change focal length = " + QString::number(m_zfocus), m_font);
         renderText(10, 125, "F: Toggle fly mode", m_font);
         renderText(10, 140, "P: Pause/Unpause", m_font);
     } else {

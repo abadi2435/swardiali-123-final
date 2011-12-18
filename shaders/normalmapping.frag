@@ -9,10 +9,9 @@ varying vec3 world_normal;
 varying vec3 position; 
 varying vec3 tan_space_light_vec;
 
-const vec4 light_color = vec4(1.,1.,1.,1.);
-const float ka = 0.2;
-const float kd = 0.5;
-
+uniform vec4 light_color;
+uniform float ka;
+uniform float kd;
 uniform float ks;
 uniform float shininess;
 
