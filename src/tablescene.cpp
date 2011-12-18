@@ -54,7 +54,7 @@ void TableScene::loadCubeMap()
 void TableScene::loadTextures() {
     QString filepath;
 
-    filepath = "./models/TBL03101.jpg";
+    filepath = "./models/TBL03101_shadow.jpg";
     m_textures["table_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["table_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
@@ -112,7 +112,7 @@ void TableScene::loadModels() {
 
     Model cup = ResourceLoader::loadObjModel("./models/cup/cup.obj");
     cout << "Loaded cup model..." << endl;
-    m_cup = TransformedModel(cup, Vector3(-8.f, -2.f, -3.f), Vector3(3.25f, 3.25f, 3.25f), Vector3(0.0,1.0,0.0), 240.f);
+    m_cup = TransformedModel(cup, Vector3(-8.f, -2.f, -3.2f), Vector3(3.25f, 3.25f, 3.25f), Vector3(0.0,1.0,0.0), 240.f);
     m_allModels.push_back(&m_cup);
 
     Model orange = ResourceLoader::loadObjModel("./models/orange.obj");

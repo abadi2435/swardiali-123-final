@@ -108,8 +108,8 @@ void GLWidget::initializeResources()
     createFramebufferObjects(width(), height());
     cout << "Loaded framebuffer objects..." << endl;
 
-    m_inactiveScene = new TableScene(this);
-    m_activeScene = new SpaceScene(this);
+    m_activeScene = new TableScene(this);
+    m_inactiveScene = new SpaceScene(this);
     m_activeScene->initializeResources();
     m_inactiveScene->initializeResources();
 

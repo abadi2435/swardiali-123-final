@@ -18,14 +18,6 @@ public:
 
     virtual void renderScene();
 
-    //meteor-specific methods:
-    virtual void randomizeModelTransformations();
-    virtual void updateModelPositions();
-    virtual float randDecimal();
-
-    virtual void moveModels();
-    virtual void moveSpaceShip();
-
 private:
     QVector<TransformedModel*> m_meteors; // vector of all the object models (and their transformations)
 
