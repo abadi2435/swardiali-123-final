@@ -30,7 +30,7 @@ void Scene::renderDepthScene() { //this is for the depth
 
     //Enable cube maps and draw the skybox
     glEnable(GL_TEXTURE_CUBE_MAP);
-    if (m_widget->m_zfocus > 0.3 || m_widget->m_focalLength < 0.2 ){
+    if (m_widget->m_zfocus > 0.7 || m_widget->m_focalLength < 0.2 ){
                 glBindTexture(GL_TEXTURE_CUBE_MAP, m_widget->m_depthCubeMapFocused);
     }
     else {
