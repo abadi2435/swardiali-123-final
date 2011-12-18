@@ -9,13 +9,13 @@ static const int MAX_MODELS = 9;
 
 TableScene::TableScene(GLWidget* widget) : Scene(widget)
 {
-    m_light1Pos = Vector3(10.f, 30.f, -30.f);
+   m_light1Pos = Vector3(-13.f, 31.f, 35.f);
 }
 
 TableScene::~TableScene(){
-        const_cast<QGLContext *>(m_widget->context())->deleteTexture(m_cubeMap);
-//        foreach (TransformedModel* tm, m_meteors)
-//            glmDelete(tm->model.model);
+    const_cast<QGLContext *>(m_widget->context())->deleteTexture(m_cubeMap);
+    foreach (TransformedModel* tm, m_allModels)
+                glmDelete(tm->model.model);
 }
 
 void TableScene::initializeResources()
@@ -54,11 +54,6 @@ void TableScene::loadCubeMap()
 void TableScene::loadTextures() {
     QString filepath;
 
-    filepath = "./models/apples/mpm_F_04_apple_diff.JPG";
-    m_textures["apples_diffuse"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["apples_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
-
     filepath = "./models/TBL03101.jpg";
     m_textures["table_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["table_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
@@ -73,6 +68,26 @@ void TableScene::loadTextures() {
     m_textures["matchbox_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["matchbox_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./textures/orange_COLOR.png";
+    m_textures["orange_diffuse"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["orange_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./textures/orange_NRM.png";
+    m_textures["orange_normal"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["orange_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./textures/orange_SPEC.png";
+    m_textures["orange_specular"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["orange_specular"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./models/cup/cup_texture.jpg";
+    m_textures["cup_diffuse"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["cup_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 }
 
 /**
@@ -82,7 +97,7 @@ void TableScene::loadModels() {
 
     Model paper = ResourceLoader::loadObjModel("./models/newspaper/newspaper.obj");
     cout << "Loaded newspaper model..." << endl;
-    m_paper = TransformedModel(paper, Vector3(0.f, -4.7f, 0.f), Vector3(5.25f, 5.25f, 5.25f), Vector3(0.0,1.0,0.0), -10.f);
+    m_paper = TransformedModel(paper, Vector3(0.f, -4.7f, -2.f), Vector3(5.25f, 5.25f, 5.25f), Vector3(0.0,1.0,0.0), -10.f);
     m_allModels.push_back(&m_paper);
 
     Model table = ResourceLoader::loadObjModel("./models/tbl031.obj");
@@ -91,35 +106,27 @@ void TableScene::loadModels() {
     m_allModels.push_back(&m_table);
 
     Model match = ResourceLoader::loadObjModel("./models/matchbox/matchbox.obj");
-    cout << "Loaded table model..." << endl;
-    m_matchbox = TransformedModel(match, Vector3(0.f, -4.f, 5.f), Vector3(2.25f, 2.25f, 2.25f), Vector3(0.0,1.0,0.0), 40.f);
+    cout << "Loaded matchbox model..." << endl;
+    m_matchbox = TransformedModel(match, Vector3(0.f, -4.f, 3.f), Vector3(2.25f, 2.25f, 2.25f), Vector3(0.0,1.0,0.0), -40.f);
     m_allModels.push_back(&m_matchbox);
 
-    Model apple = ResourceLoader::loadObjModel("./models/orange.obj");
-    cout << "Loaded apple model..." << endl;
-    m_apple = TransformedModel(apple, Vector3(0.f, -4.f, 0.f), Vector3(10.25f, 10.25f, 10.25f), Vector3(0.0,1.0,0.0), 0.f);
-    m_allModels.push_back(&m_apple);
-    m_apple2 = TransformedModel(apple, Vector3(0.f, -4.f, 0.f), Vector3(10.25f, 10.25f, 10.25f), Vector3(0.0,1.0,0.0), 0.f);
-    m_allModels.push_back(&m_apple2);
-    m_apple3 = TransformedModel(apple, Vector3(0.f, -4.f, 0.f), Vector3(10.25f, 10.25f, 10.25f), Vector3(0.0,1.0,0.0), 0.f);
-    m_allModels.push_back(&m_apple3);
+    Model cup = ResourceLoader::loadObjModel("./models/cup/cup.obj");
+    cout << "Loaded cup model..." << endl;
+    m_cup = TransformedModel(cup, Vector3(-8.f, -2.f, -3.f), Vector3(3.25f, 3.25f, 3.25f), Vector3(0.0,1.0,0.0), 240.f);
+    m_allModels.push_back(&m_cup);
+
+    Model orange = ResourceLoader::loadObjModel("./models/orange.obj");
+    cout << "Loaded orange model..." << endl;
+    m_orange = TransformedModel(orange, Vector3(8.f, -3.5f, 0.f), Vector3(10.25f, 10.25f, 10.25f), Vector3(0.0,1.0,0.0), 0.f);
+    m_allModels.push_back(&m_orange);
+    m_orange2 = TransformedModel(orange, Vector3(12.f, -3.5f, 2.f), Vector3(10.25f, 10.25f, 10.25f), Vector3(0.0,1.0,0.0), 0.f);
+    m_allModels.push_back(&m_orange2);
 }
 
 void TableScene::randomizeModelTransformations() {
-//    for (int i = 0; i < m_meteors.size(); i++) {
-//        m_meteors[i]->translate = Vector3(-MAX_MODELS + 2*i, 5*randDecimal() - 1, 5*randDecimal() - 1);
-//        float scaleFactor = 0.5*randDecimal() + 0.75;
-//        m_meteors[i]->scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
-//        m_meteors[i]->rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
-//        m_meteors[i]->rotationDegrees = 360*randDecimal();
-//        m_meteors[i]->dr = randDecimal() * 0.15;
-//    }
 }
 
 void TableScene::updateModelPositions() {
-//    for (int i = 0; i < MAX_MODELS; i++) {
-//        m_meteors[i]->rotationDegrees += m_meteors[i]->dr;
-//    }
 }
 
 float TableScene::randDecimal() {
@@ -127,20 +134,6 @@ float TableScene::randDecimal() {
 }
 
 void TableScene::moveSpaceShip() {
-//    float theta = (m_widget->m_clock.elapsed() % 100000) / (100000.f/(2*M_PI));
-//
-//    m_apple.translate.x = -10*cos(theta);
-//    m_apple.translate.z = 10*sin(theta);
-//
-//    m_apple2.translate.x = -10*cos(theta - 0.05);
-//    m_apple2.translate.z = 10*sin(theta - 0.05);
-//
-//    m_apple3.translate.x = -10*cos(theta - 0.05);
-//    m_apple3.translate.z = 10*sin(theta - 0.05);
-//
-//    m_apple.rotationDegrees = (theta * 180/M_PI) - 90;
-//    m_apple2.rotationDegrees = ((theta - 0.05) * 180/M_PI) - 90;
-//    m_apple3.rotationDegrees = ((theta - 0.05) * 180/M_PI) - 90;
 }
 
 /**
@@ -164,49 +157,57 @@ void TableScene::renderScene() {
     glEnable(GL_TEXTURE_2D);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_textures["apples_diffuse"]);
-    glActiveTexture(GL_TEXTURE0);this->
+    glBindTexture(GL_TEXTURE_2D, m_textures["orange_diffuse"]);
+    glActiveTexture(GL_TEXTURE0);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_textures["orange_normal"]);
+    glActiveTexture(GL_TEXTURE0);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, m_textures["orange_specular"]);
+    glActiveTexture(GL_TEXTURE0);
 
     m_widget->m_shaderPrograms["normalmapping"]->bind();
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_widget->m_camera.getCameraPosition().x, m_widget->m_camera.getCameraPosition().y, m_widget->m_camera.getCameraPosition().z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
-    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_map", GLint(2));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("specular_map", GLint(3));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", m_widget->m_useNormalMapping);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.3));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(20));
 
     glPushMatrix();
-    glTranslatef(m_apple.translate.x, m_apple.translate.y, m_apple.translate.z);
-    glScalef(m_apple.scale.x, m_apple.scale.y, m_apple.scale.z);
-    glRotatef(m_apple.rotationDegrees, m_apple.rotationAxis.x, m_apple.rotationAxis.y, m_apple.rotationAxis.z);
-    glCallList(m_apple.model.idx);
+    glTranslatef(m_orange.translate.x, m_orange.translate.y, m_orange.translate.z);
+    glScalef(m_orange.scale.x, m_orange.scale.y, m_orange.scale.z);
+    glRotatef(m_orange.rotationDegrees, m_orange.rotationAxis.x, m_orange.rotationAxis.y, m_orange.rotationAxis.z);
+    glCallList(m_orange.model.idx);
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(m_apple2.translate.x, m_apple2.translate.y, m_apple2.translate.z);
-    glScalef(m_apple2.scale.x, m_apple2.scale.y, m_apple2.scale.z);
-    glRotatef(m_apple2.rotationDegrees, m_apple2.rotationAxis.x, m_apple2.rotationAxis.y, m_apple2.rotationAxis.z);
-    glCallList(m_apple2.model.idx);
-    glPopMatrix();
-
-    glPushMatrix();
-    glTranslatef(m_apple3.translate.x, m_apple3.translate.y, m_apple3.translate.z);
-    glScalef(m_apple3.scale.x, m_apple3.scale.y, m_apple3.scale.z);
-    glRotatef(m_apple3.rotationDegrees, m_apple3.rotationAxis.x, m_apple3.rotationAxis.y, m_apple3.rotationAxis.z);
-    glCallList(m_apple3.model.idx);
+    glTranslatef(m_orange2.translate.x, m_orange2.translate.y, m_orange2.translate.z);
+    glScalef(m_orange2.scale.x, m_orange2.scale.y, m_orange2.scale.z);
+    glRotatef(m_orange2.rotationDegrees, m_orange2.rotationAxis.x, m_orange2.rotationAxis.y, m_orange2.rotationAxis.z);
+    glCallList(m_orange2.model.idx);
     glPopMatrix();
 
     m_widget->m_shaderPrograms["normalmapping"]->release();
 
 
     //----------
+    
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_textures["newspaper_diffuse"]);
     glActiveTexture(GL_TEXTURE0);this->
 
-    m_widget->m_shaderPrograms["normalmapping"]->bind();
+            m_widget->m_shaderPrograms["normalmapping"]->bind();
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_widget->m_camera.getCameraPosition().x, m_widget->m_camera.getCameraPosition().y, m_widget->m_camera.getCameraPosition().z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(1));
 
     glPushMatrix();
     glTranslatef(m_paper.translate.x, m_paper.translate.y, m_paper.translate.z);
@@ -216,6 +217,7 @@ void TableScene::renderScene() {
     glPopMatrix();
 
     m_widget->m_shaderPrograms["normalmapping"]->release();
+    
     //-----------
 
 
@@ -228,6 +230,8 @@ void TableScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(5));
 
     glPushMatrix();
     glTranslatef(m_table.translate.x, m_table.translate.y, m_table.translate.z);
@@ -249,6 +253,8 @@ void TableScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(3));
 
     glPushMatrix();
     glTranslatef(m_matchbox.translate.x, m_matchbox.translate.y, m_matchbox.translate.z);
@@ -258,6 +264,30 @@ void TableScene::renderScene() {
     glPopMatrix();
 
     m_widget->m_shaderPrograms["normalmapping"]->release();
+    
+    //-----------
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_textures["cup_diffuse"]);
+    glActiveTexture(GL_TEXTURE0);this->
+
+    m_widget->m_shaderPrograms["normalmapping"]->bind();
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_widget->m_camera.getCameraPosition().x, m_widget->m_camera.getCameraPosition().y, m_widget->m_camera.getCameraPosition().z);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.2));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(3));
+
+    glPushMatrix();
+    glTranslatef(m_cup.translate.x, m_cup.translate.y, m_cup.translate.z);
+    glScalef(m_cup.scale.x, m_cup.scale.y, m_cup.scale.z);
+    glRotatef(m_cup.rotationDegrees, m_cup.rotationAxis.x, m_cup.rotationAxis.y, m_cup.rotationAxis.z);
+    glCallList(m_cup.model.idx);
+    glPopMatrix();
+
+    m_widget->m_shaderPrograms["normalmapping"]->release();
+    
     //-----------
 
     // Disable culling, depth testing and cube maps

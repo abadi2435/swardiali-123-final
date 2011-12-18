@@ -29,7 +29,7 @@ public:
 private:
     QVector<TransformedModel*> m_meteors; // vector of all the object models (and their transformations)
 
-    TransformedModel m_apple, m_apple2, m_apple3, m_paper, m_table, m_matchbox;
+    TransformedModel m_orange, m_orange2, m_paper, m_table, m_matchbox, m_cup;
 };
 
 #endif // TABLESCENE_H
