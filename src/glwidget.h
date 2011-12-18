@@ -56,6 +56,7 @@ protected:
     void initializeResources();
     void loadCubeMap();
     void loadDepthCubeMap();
+    void loadDepthCubeMapFocused();
     void createShaderPrograms();
     void createFramebufferObjects(int width, int height);
     void loadTextures();
@@ -89,6 +90,8 @@ private:
     float m_focalLength;
     bool m_useDepthOfField;
     int m_numModels;
+    float m_zfocus;
+
 
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
@@ -97,6 +100,7 @@ private:
     GLuint m_skybox; // skybox call list ID
     GLuint m_cubeMap; // cubeMap texture ID
     GLuint m_depthCubeMap; // all white cubeMap texture ID
+    GLuint m_depthCubeMapFocused; // all black cubeMap texture ID
 
     QHash<QString, GLuint> m_textures; // hash map of all the texture IDs
     QVector<TransformedModel> m_models; // hash map of all the object models (and their transformations)

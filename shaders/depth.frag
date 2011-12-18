@@ -1,39 +1,20 @@
 varying vec3 objPosition;
 uniform vec3 camPosition;
 uniform float focalLength;
+uniform float zfocus;
     
 void main (void)
 {
-  /*  
-    float A = gl_ProjectionMatrix[2].z;
-    float B = gl_ProjectionMatrix[3].z;
-   float zNear = - B / (1.0 - A);
-   float zFar  =   B / (1.0 + A);
-
-    float depth = gl_FragCoord.z;
- 
-    float w = -(zNear * zFar) / (depth * (zFar - zNear) - zFar);
-    float z = depth * w;
-
-    
-    float cons = .01;
-    float f = min(1, max(0,cons*z));    
-    */
-
-    //note that de isnt necessarily between 0 and 1.
-    float de = length(objPosition - camPosition);
-    //float maxDepth = 10.0;
-    float maxDepth = focalLength;
-    de = clamp(de / maxDepth, 0.0, 1.0);
+   float de = dot(normalize(-camPosition), objPosition - camPosition)/50;
+  // float de = length(objPosition - camPosition)/50; //so that nothing becomes white
+    de = clamp(de, 0.0, 1.0);
 
         
     //for circle of confusion method:
-   float zFocus = .5;
-   float pixCoC = abs((1/(1-zFocus)) * de+(1-(1/(1-zFocus))));
-   float blur = clamp(pixCoC, 0.0, 1.0);
-   
-    //end
-   
+   float blur = abs((-focalLength/zfocus)*de + focalLength);
+   blur = clamp(blur, 0.0, 1.0);
     
-    gl_FragColor = vec4(de,blur,de,1);
+    //we store the depth and the blur in another framebuffer so that
+    gl_FragColor = vec4(de, blur, de, 1);
 }
+

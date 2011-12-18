@@ -25,8 +25,8 @@ static const int MAX_MODELS = 9;
   Constructor.  Initialize all member variables here.
  **/
 GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
-    m_timer(this), m_prevTime(0), m_prevFps(0.f), m_fps(0.f),
-    m_font("Deja Vu Sans Mono", 8, 4)
+m_timer(this), m_prevTime(0), m_prevFps(0.f), m_fps(0.f),
+m_font("Deja Vu Sans Mono", 8, 4)
 {
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
@@ -41,7 +41,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
 
     m_useNormalMapping = true;
     m_drawDepthMap = false;
-    m_focalLength = 10.0;
+    m_focalLength = 5.0;
+    m_zfocus = .5;
     m_useDepthOfField = false;
     m_numModels = 9;
 
@@ -107,7 +108,10 @@ void GLWidget::initializeResources()
     cout << "Loaded cube map... " << m_cubeMap << endl;
 
     loadDepthCubeMap();
-    cout << "Loaded depth cube map..." << m_depthCubeMap << endl;
+    cout << "Loaded blurry depth cube map..." << m_depthCubeMap << endl;
+
+    loadDepthCubeMapFocused();
+    cout << "Loaded focused depth cube map..." << m_depthCubeMapFocused << endl;
 
     loadTextures();
 
@@ -138,7 +142,7 @@ void GLWidget::loadCubeMap()
 }
 
 /**
-  Load a pure white cube box for rendering the depths
+  Load a pure white cube box for rendering the background blurry
  **/
 void GLWidget::loadDepthCubeMap()
 {
@@ -154,13 +158,28 @@ void GLWidget::loadDepthCubeMap()
 }
 
 /**
+  Load a pure white cube box for rendering the background in focus.
+ **/
+void GLWidget::loadDepthCubeMapFocused()
+{
+    QList<QFile *> fileList;
+    QFile* black = new QFile("./textures/astra/black.jpeg");
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    m_depthCubeMapFocused = ResourceLoader::loadCubeMap(fileList);
+}
+
+/**
   Create shader programs.
  **/
 void GLWidget::createShaderPrograms()
 {
     const QGLContext *ctx = context();
-    m_shaderPrograms["normalmapping"] = ResourceLoader::newShaderProgram(ctx, "./shaders/normalmapping.vert",
-                                                                         "./shaders/normalmapping.frag");
+    m_shaderPrograms["normalmapping"] = ResourceLoader::newShaderProgram(ctx, "./shaders/normalmapping.vert",                                                                         "./shaders/normalmapping.frag");
 
     m_shaderPrograms["dblur"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/dblur.frag");
 
@@ -331,6 +350,7 @@ void GLWidget::paintGL()
             m_shaderPrograms["dblur"]->bind();
             m_shaderPrograms["dblur"]->setUniformValue("height", (float) height);
             m_shaderPrograms["dblur"]->setUniformValue("width", (float) width);
+            m_shaderPrograms["dblur"]->setUniformValue("focalLength", (float) m_focalLength);
 
             glActiveTexture(GL_TEXTURE3); // Bind the depth texture to slot 3
             glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
@@ -370,7 +390,12 @@ void GLWidget::renderDepthScene() { //this is for the depth
 
     //Enable cube maps and draw the skybox
     glEnable(GL_TEXTURE_CUBE_MAP);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMap);
+    if (m_zfocus > 0.3 || m_focalLength < 0.2 ){
+                glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMapFocused);
+    }
+    else {
+                glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMap);
+    }
     glCallList(m_skybox);
 
     // Enable culling (back) faces for rendering the dragon
@@ -379,8 +404,10 @@ void GLWidget::renderDepthScene() { //this is for the depth
     // Render the dragon with the refraction shader bound
     glActiveTexture(GL_TEXTURE0);
     m_shaderPrograms["depth"]->bind();
+
     m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
     m_shaderPrograms["depth"]->setUniformValue("focalLength", m_focalLength);
+    m_shaderPrograms["depth"]->setUniformValue("zfocus", m_zfocus);
 
 
     for (int i = 0; i < m_numModels; i++) {
@@ -566,6 +593,12 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
 {
     m_prevMousePos.x = event->x();
     m_prevMousePos.y = event->y();
+
+    QImage image = m_framebufferObjects["fbo_0"]->toImage();
+    QRgb color = image.pixel(m_prevMousePos.x, m_prevMousePos.y);
+    cout<<qRed((float) (color));
+    m_zfocus = qRed((float) ((float)color))/255.0;
+
 }
 
 /**
@@ -631,7 +664,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
 {
     switch(event->key())
     {
-        case Qt::Key_S:
+    case Qt::Key_S:
         {
             QImage qi = grabFrameBuffer(false);
             QString filter;
@@ -639,24 +672,46 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             qi.save(QFileInfo(fileName).absoluteDir().absolutePath() + "/" + QFileInfo(fileName).baseName() + ".png", "PNG", 100);
             break;
         }
-        case Qt::Key_N:
+    case Qt::Key_N:
         {
             m_useNormalMapping = !m_useNormalMapping;
             break;
         }
-        case Qt::Key_D:
+    case Qt::Key_D:
         {
             m_drawDepthMap = !m_drawDepthMap;
             break;
         }
-        case Qt::Key_Up:
+    case Qt::Key_Z:
         {
-            m_focalLength += 0.1;
+            m_zfocus +=.005;
+            if (m_zfocus > 1){
+                m_zfocus = 1;
+            }
             break;
         }
-        case Qt::Key_Down:
+    case Qt::Key_A:
+        {
+            m_zfocus -=.005;
+            if (m_zfocus < 0){
+                m_zfocus = 0;
+            }
+            break;
+        }
+    case Qt::Key_Up:
+        {
+            m_focalLength += 0.1;
+            if (m_focalLength > 12) {
+                m_focalLength = 12;
+            }
+            break;
+        }
+    case Qt::Key_Down:
         {
             m_focalLength -= 0.1;
+            if (m_focalLength < .1) {
+                m_focalLength = 0.1;
+            }
             break;
         }
         case Qt::Key_B:
@@ -677,8 +732,8 @@ void GLWidget::paintText()
     // Combine the previous and current framerate
     if (m_fps >= 0 && m_fps < 1000)
     {
-       m_prevFps *= 0.95f;
-       m_prevFps += m_fps * 0.05f;
+        m_prevFps *= 0.95f;
+        m_prevFps += m_fps * 0.05f;
     }
 
     // QGLWidget's renderText takes xy coordinates, a string, and a font
@@ -688,4 +743,5 @@ void GLWidget::paintText()
     renderText(10, 65, "D: Draw depth map on/off", m_font);
     renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
     renderText(10, 95, "B: Toggle depth of field", m_font);
+    renderText(10, 110, "A/Z: Change focus place = " + QString::number(m_zfocus), m_font);
 }
