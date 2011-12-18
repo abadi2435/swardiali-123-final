@@ -5,11 +5,12 @@
 using std::cout;
 using std::endl;
 
-static const int MAX_MODELS = 9;
+static const int MAX_MODELS = 18;
 
 SpaceScene::SpaceScene(GLWidget* widget) : Scene(widget)
 {
     m_light1Pos = Vector3(10.f, 30.f, -30.f);
+    m_internalTimer = 0;
 }
 
 SpaceScene::~SpaceScene(){
@@ -69,7 +70,7 @@ void SpaceScene::loadTextures() {
     if (m_textures["obj_spec"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 
-    filepath = "./models/fighter/ghoul_map_jpg.jpg";
+    filepath = "./models/fighter/ghoul_map_edit.jpg";
     m_textures["fighter_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["fighter_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
@@ -79,10 +80,24 @@ void SpaceScene::loadTextures() {
   Load all the models!
 **/
 void SpaceScene::loadModels() {
-    Model mesh = ResourceLoader::loadObjModel("./models/meteor.obj");
+    Model meteor1 = ResourceLoader::loadObjModel("./models/meteor.obj");
     cout << "Loaded ./models/meteor.obj..." << endl;
 
+    Model meteor2 = ResourceLoader::loadObjModel("./models/meteor2.obj");
+    cout << "Loaded ./models/meteor2.obj..." << endl;
+
+    Model meteor3 = ResourceLoader::loadObjModel("./models/meteor3.obj");
+    cout << "Loaded ./models/meteor3.obj..." << endl;
+
     for (int i = 0; i < MAX_MODELS; i++) {
+        Model mesh;
+        if (i % 3 == 0) {
+            mesh = meteor1;
+        } else if (i % 3 == 1) {
+            mesh = meteor2;
+        } else {
+            mesh = meteor3;
+        }
         TransformedModel* t = new TransformedModel(mesh, Vector3(0.f,0.f,0.f), Vector3(1.f,1.f,1.f), Vector3(1.0,0.0,0.0), 0.f);
         m_allModels.push_back(t);
         m_meteors.push_back(t);
@@ -100,8 +115,16 @@ void SpaceScene::loadModels() {
 }
 
 void SpaceScene::randomizeModelTransformations() {
-    for (int i = 0; i < m_meteors.size(); i++) {
-        m_meteors[i]->translate = Vector3(-MAX_MODELS + 2*i, 5*randDecimal() - 1, 5*randDecimal() - 1);
+    for (int i = 0; i < m_meteors.size()/2; i++) {
+        m_meteors[i]->translate = Vector3(-MAX_MODELS/2 + 2*i, 5*randDecimal() - 1, 5*randDecimal() - 5);
+        float scaleFactor = 0.5*randDecimal() + 0.75;
+        m_meteors[i]->scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
+        m_meteors[i]->rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
+        m_meteors[i]->rotationDegrees = 360*randDecimal();
+        m_meteors[i]->dr = randDecimal() * 0.15;
+    }
+    for (int i = m_meteors.size()/2; i < m_meteors.size(); i++) {
+        m_meteors[i]->translate = Vector3(MAX_MODELS + MAX_MODELS/2 - 2*i, 5*randDecimal() - 1, 5*randDecimal());
         float scaleFactor = 0.5*randDecimal() + 0.75;
         m_meteors[i]->scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
         m_meteors[i]->rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
@@ -121,7 +144,8 @@ float SpaceScene::randDecimal() {
 }
 
 void SpaceScene::moveSpaceShip() {
-    float theta = (m_widget->m_clock.elapsed() % 100000) / (100000.f/(2*M_PI));
+    m_internalTimer++;
+    float theta = (m_internalTimer % 10000) / (10000.f/(2*M_PI));
 
     m_spaceship.translate.x = -10*cos(theta);
     m_spaceship.translate.z = 10*sin(theta);
@@ -176,6 +200,8 @@ void SpaceScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_map", GLint(2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("specular_map", GLint(3));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", m_widget->m_useNormalMapping);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.3));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(10));
 
     for (int i = 0; i < m_meteors.size(); i++) {
         glPushMatrix();
@@ -197,6 +223,8 @@ void SpaceScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.9));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(30));
 
     glPushMatrix();
     glTranslatef(m_spaceship.translate.x, m_spaceship.translate.y, m_spaceship.translate.z);

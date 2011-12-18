@@ -11,26 +11,9 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>[Lab09] Bloom</string>
+   <string>CS 123 Final Project by Gianna Badiali and Sam Swarr</string>
   </property>
   <widget class="GLWidget" name="centralWidget"/>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="actionQuit"/>
-   </widget>
-   <addaction name="menuFile"/>
-  </widget>
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>

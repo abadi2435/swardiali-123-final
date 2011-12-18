@@ -12,8 +12,9 @@ varying vec3 tan_space_light_vec;
 const vec4 light_color = vec4(1.,1.,1.,1.);
 const float ka = 0.2;
 const float kd = 0.5;
-const float ks = 0.5;
-const float shininess = 10;
+
+uniform float ks;
+uniform float shininess;
 
 
 void main() 

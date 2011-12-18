@@ -43,6 +43,7 @@ m_font("Deja Vu Sans Mono", 8, 4)
     m_useDepthOfField = false;
     m_flyMode = false;
     m_displayHelp = false;
+    m_paused = false;
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -287,7 +288,9 @@ void GLWidget::paintGL()
         }
     }
 
-    m_activeScene->moveModels();
+    if (!m_paused) {
+        m_activeScene->moveModels();
+    }
 
     if (m_flyMode) {
         m_camera.theta -= 0.001;
@@ -296,31 +299,6 @@ void GLWidget::paintGL()
     // Display the FPS
     paintText();
 }
-
-
-///**
-//  Draws the floor.
-//**/
-//void GLWidget::drawFloor() {
-//    glBegin(GL_QUADS);
-//    glNormal3f(0.f, 1.f, 0.f);
-//    glTexCoord2f(0.f, 0.f);
-//    glVertex3f(0.f, 0.f, 0.f);
-//
-//    glNormal3f(0.f, 1.f, 0.f);
-//    glTexCoord2f(0.f, 1.f);
-//    glVertex3f(0.f, 0.f, 1.f);
-//
-//    glNormal3f(0.f, 1.f, 0.f);
-//    glTexCoord2f(1.f, 1.f);
-//    glVertex3f(1.f, 0.f, 1.f);
-//
-//    glNormal3f(0.f, 1.f, 0.f);
-//    glTexCoord2f(1.f, 0.f);
-//    glVertex3f(1.f, 0.f, 0.f);
-//
-//    glEnd();
-//}
 
 /**
   Called when the mouse is dragged.  Rotates the camera based on mouse movement.
@@ -480,6 +458,11 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             m_displayHelp = !m_displayHelp;
             break;
         }
+    case Qt::Key_P:
+        {
+            m_paused = !m_paused;
+            break;
+        }
     }
 }
 
@@ -507,6 +490,7 @@ void GLWidget::paintText()
         renderText(10, 95, "Left/Right: Change depth of field size = " + QString::number(m_focalLength), m_font);
         renderText(10, 110, "Up/Down: Change focus length = " + QString::number(m_zfocus), m_font);
         renderText(10, 125, "F: Toggle fly mode", m_font);
+        renderText(10, 140, "P: Pause/Unpause", m_font);
     } else {
         renderText(10, 20, "Press H for help.", m_font);
     }

@@ -30,6 +30,8 @@ private:
     QVector<TransformedModel*> m_meteors; // vector of all the object models (and their transformations)
 
     TransformedModel m_spaceship, m_spaceship2, m_spaceship3;
+
+    int m_internalTimer;
 };
 
 #endif // SPACESCENE_H
