@@ -42,6 +42,8 @@ public:
     float m_focalLength;
     bool m_useDepthOfField;
     float m_zfocus;
+    bool m_flyMode;
+    bool m_displayHelp;
 
 protected:
     // Overridden QGLWidget methods

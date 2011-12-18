@@ -41,6 +41,8 @@ m_font("Deja Vu Sans Mono", 8, 4)
     m_focalLength = 5.0;
     m_zfocus = .5;
     m_useDepthOfField = false;
+    m_flyMode = false;
+    m_displayHelp = false;
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -94,10 +96,10 @@ void GLWidget::initializeResources()
     cout << "--- Loading Resources ---" << endl;
 
     loadDepthCubeMap();
-    cout << "Loaded blurry depth cube map..." << m_depthCubeMap << endl;
+    cout << "Loaded blurry depth cube map..." << endl;
 
     loadDepthCubeMapFocused();
-    cout << "Loaded focused depth cube map..." << m_depthCubeMapFocused << endl;
+    cout << "Loaded focused depth cube map..." << endl;
 
     createShaderPrograms();
     cout << "Loaded shader programs..." << endl;
@@ -287,6 +289,10 @@ void GLWidget::paintGL()
 
     m_activeScene->moveModels();
 
+    if (m_flyMode) {
+        m_camera.theta -= 0.001;
+    }
+
     // Display the FPS
     paintText();
 }
@@ -407,7 +413,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
 {
     switch(event->key())
     {
-    case Qt::Key_S:
+    case Qt::Key_F12:
         {
             QImage qi = grabFrameBuffer(false);
             QString filter;
@@ -425,7 +431,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             m_drawDepthMap = !m_drawDepthMap;
             break;
         }
-    case Qt::Key_Z:
+    case Qt::Key_Up:
         {
             m_zfocus +=.005;
             if (m_zfocus > 1){
@@ -433,7 +439,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             }
             break;
         }
-    case Qt::Key_A:
+    case Qt::Key_Down:
         {
             m_zfocus -=.005;
             if (m_zfocus < 0){
@@ -441,7 +447,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             }
             break;
         }
-    case Qt::Key_Up:
+    case Qt::Key_Left:
         {
             m_focalLength += 0.1;
             if (m_focalLength > 12) {
@@ -449,7 +455,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             }
             break;
         }
-    case Qt::Key_Down:
+    case Qt::Key_Right:
         {
             m_focalLength -= 0.1;
             if (m_focalLength < .1) {
@@ -457,9 +463,19 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             }
             break;
         }
-        case Qt::Key_B:
+   case Qt::Key_B:
         {
             m_useDepthOfField = !m_useDepthOfField;
+            break;
+        }
+    case Qt::Key_F:
+        {
+            m_flyMode = !m_flyMode;
+            break;
+        }
+    case Qt::Key_H:
+        {
+            m_displayHelp = !m_displayHelp;
             break;
         }
     }
@@ -479,13 +495,18 @@ void GLWidget::paintText()
         m_prevFps += m_fps * 0.05f;
     }
 
-    // QGLWidget's renderText takes xy coordinates, a string, and a font
-    renderText(10, 20, "FPS: " + QString::number((int) (m_prevFps)), m_font);
-    renderText(10, 35, "S: Save screenshot", m_font);
-    renderText(10, 50, "N: Toggle normal/specular mapping: " + QString::number((int) (m_useNormalMapping)), m_font);
-    renderText(10, 65, "D: Draw depth map on/off", m_font);
-    renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
-    renderText(10, 95, "B: Toggle depth of field", m_font);
-    renderText(10, 110, "A/Z: Change focus plane = " + QString::number(m_zfocus), m_font);
+    if (m_displayHelp) {
+        // QGLWidget's renderText takes xy coordinates, a string, and a font
+        renderText(10, 20, "FPS: " + QString::number((int) (m_prevFps)), m_font);
+        renderText(10, 35, "F12: Save screenshot", m_font);
+        renderText(10, 50, "N: Toggle normal/specular mapping: " + QString::number((int) (m_useNormalMapping)), m_font);
+        renderText(10, 65, "D: Draw depth map on/off", m_font);
+        renderText(10, 80, "B: Toggle depth of field", m_font);
+        renderText(10, 95, "Left/Right: Change depth of field size = " + QString::number(m_focalLength), m_font);
+        renderText(10, 110, "Up/Down: Change focus length = " + QString::number(m_zfocus), m_font);
+        renderText(10, 125, "F: Toggle fly mode", m_font);
+    } else {
+        renderText(10, 20, "Press H for help.", m_font);
+    }
 
 }

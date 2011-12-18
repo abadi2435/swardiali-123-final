@@ -24,7 +24,7 @@ void SpaceScene::initializeResources()
     cout << "Loaded skybox..." << endl;
 
     loadCubeMap();
-    cout << "Loaded cube map... " << m_cubeMap << endl;
+    cout << "Loaded cube map... " << endl;
 
     loadTextures();
 
@@ -80,7 +80,7 @@ void SpaceScene::loadTextures() {
 **/
 void SpaceScene::loadModels() {
     Model mesh = ResourceLoader::loadObjModel("./models/meteor.obj");
-    cout << "Loaded object mesh..." << endl;
+    cout << "Loaded ./models/meteor.obj..." << endl;
 
     for (int i = 0; i < MAX_MODELS; i++) {
         TransformedModel* t = new TransformedModel(mesh, Vector3(0.f,0.f,0.f), Vector3(1.f,1.f,1.f), Vector3(1.0,0.0,0.0), 0.f);
@@ -90,6 +90,7 @@ void SpaceScene::loadModels() {
     this->randomizeModelTransformations();
 
     Model ship = ResourceLoader::loadObjModel("./models/fighter/GhoulOBJ.obj");
+    cout << "Loaded ../models/fighter/GhoulOBJ.obj..." << endl;
     m_spaceship = TransformedModel(ship, Vector3(0.f, 3.f, 0.f), Vector3(0.25f, 0.25f, 0.25f), Vector3(0.0,1.0,0.0), 0.f);
     m_allModels.push_back(&m_spaceship);
     m_spaceship2 = TransformedModel(ship, Vector3(0.f, 3.3f, 0.f), Vector3(0.25f, 0.25f, 0.25f), Vector3(0.0,1.0,0.0), 0.f);
@@ -124,8 +125,6 @@ void SpaceScene::moveSpaceShip() {
 
     m_spaceship.translate.x = -10*cos(theta);
     m_spaceship.translate.z = 10*sin(theta);
-
-    //m_widget->m_camera.theta = theta - M_PI/2;
 
     m_spaceship2.translate.x = -10*cos(theta - 0.05);
     m_spaceship2.translate.z = 10*sin(theta - 0.05);
