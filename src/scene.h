@@ -49,9 +49,11 @@ public:
     virtual void loadModels() {};
 
     virtual void renderScene() {};
-    virtual void renderDepthScene() {};
+    virtual void renderDepthScene();
 
 protected:
+    QVector<TransformedModel*> m_allModels;
+
     Vector3 m_light1Pos;
     GLWidget* m_widget;
     GLuint m_cubeMap; // cubeMap texture ID

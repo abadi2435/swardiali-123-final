@@ -17,7 +17,6 @@ public:
     virtual void loadModels();
 
     virtual void renderScene();
-    virtual void renderDepthScene();
 
     //meteor-specific methods:
     virtual void randomizeModelTransformations();
@@ -25,8 +24,9 @@ public:
     virtual float randDecimal();
 
 private:
-    QVector<TransformedModel> m_meteors; // vector of all the object models (and their transformations)
-    int m_numModels;
+    QVector<TransformedModel*> m_meteors; // vector of all the object models (and their transformations)
+
+    TransformedModel m_spaceship;
 };
 
 #endif // SPACESCENE_H
