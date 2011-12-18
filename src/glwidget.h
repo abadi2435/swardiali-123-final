@@ -14,6 +14,25 @@
 class QGLShaderProgram;
 class QGLFramebufferObject;
 
+/*! Store a Model with its transformations. */
+struct TransformedModel {
+    Model model; //! The object model
+    Vector3 translate, scale; //! The scale and translate vectors
+    Vector3 rotationAxis; //! The axis of rotation
+    float rotationDegrees; //! The number of degrees to rotate
+    float dr;
+
+    /*! Default constructor */
+    TransformedModel() {}
+
+    /*! Copy constructor */
+    TransformedModel(const TransformedModel& tm) :
+            model(tm.model), translate(tm.translate), scale(tm.scale), rotationAxis(tm.rotationAxis), rotationDegrees(tm.rotationDegrees) {}
+
+    /*! Constructor */
+    TransformedModel(Model model, Vector3 translate, Vector3 scale, Vector3 rotationAxis, float degrees) :
+            model(model), translate(translate), scale(scale), rotationAxis(rotationAxis), rotationDegrees(degrees){}
+};
 
 class GLWidget : public QGLWidget
 {
@@ -41,6 +60,7 @@ protected:
     void createShaderPrograms();
     void createFramebufferObjects(int width, int height);
     void loadTextures();
+    void loadModels();
 
     // Drawing code
     void applyOrthogonalCamera(float width, float height);
@@ -50,6 +70,10 @@ protected:
     void renderDepthScene();
     void paintText();
     void drawFloor();
+
+    void randomizeModelTransformations();
+    void updateModelPositions();
+    float randDecimal();
 
 private:
     QTimer m_timer;
@@ -64,7 +88,10 @@ private:
     bool m_useNormalMapping;
     bool m_drawDepthMap;
     float m_focalLength;
+    bool m_useDepthOfField;
+    int m_numModels;
     float m_zfocus;
+
 
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
@@ -77,6 +104,7 @@ private:
     GLuint m_depthCubeMapFocused; // all black cubeMap texture ID
 
     QHash<QString, GLuint> m_textures; // hash map of all the texture IDs
+    QVector<TransformedModel> m_models; // hash map of all the object models (and their transformations)
 
     QFont m_font; // font for rendering text
 
