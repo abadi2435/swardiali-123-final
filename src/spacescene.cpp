@@ -5,7 +5,7 @@
 using std::cout;
 using std::endl;
 
-static const int MAX_MODELS = 9;
+static const int MAX_MODELS = 18;
 
 SpaceScene::SpaceScene(GLWidget* widget) : Scene(widget)
 {
@@ -80,10 +80,24 @@ void SpaceScene::loadTextures() {
   Load all the models!
 **/
 void SpaceScene::loadModels() {
-    Model mesh = ResourceLoader::loadObjModel("./models/meteor.obj");
+    Model meteor1 = ResourceLoader::loadObjModel("./models/meteor.obj");
     cout << "Loaded ./models/meteor.obj..." << endl;
 
+    Model meteor2 = ResourceLoader::loadObjModel("./models/meteor2.obj");
+    cout << "Loaded ./models/meteor2.obj..." << endl;
+
+    Model meteor3 = ResourceLoader::loadObjModel("./models/meteor3.obj");
+    cout << "Loaded ./models/meteor3.obj..." << endl;
+
     for (int i = 0; i < MAX_MODELS; i++) {
+        Model mesh;
+        if (i % 3 == 0) {
+            mesh = meteor1;
+        } else if (i % 3 == 1) {
+            mesh = meteor2;
+        } else {
+            mesh = meteor3;
+        }
         TransformedModel* t = new TransformedModel(mesh, Vector3(0.f,0.f,0.f), Vector3(1.f,1.f,1.f), Vector3(1.0,0.0,0.0), 0.f);
         m_allModels.push_back(t);
         m_meteors.push_back(t);
@@ -101,8 +115,16 @@ void SpaceScene::loadModels() {
 }
 
 void SpaceScene::randomizeModelTransformations() {
-    for (int i = 0; i < m_meteors.size(); i++) {
-        m_meteors[i]->translate = Vector3(-MAX_MODELS + 2*i, 5*randDecimal() - 1, 5*randDecimal() - 1);
+    for (int i = 0; i < m_meteors.size()/2; i++) {
+        m_meteors[i]->translate = Vector3(-MAX_MODELS/2 + 2*i, 5*randDecimal() - 1, 5*randDecimal() - 5);
+        float scaleFactor = 0.5*randDecimal() + 0.75;
+        m_meteors[i]->scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
+        m_meteors[i]->rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
+        m_meteors[i]->rotationDegrees = 360*randDecimal();
+        m_meteors[i]->dr = randDecimal() * 0.15;
+    }
+    for (int i = m_meteors.size()/2; i < m_meteors.size(); i++) {
+        m_meteors[i]->translate = Vector3(MAX_MODELS + MAX_MODELS/2 - 2*i, 5*randDecimal() - 1, 5*randDecimal());
         float scaleFactor = 0.5*randDecimal() + 0.75;
         m_meteors[i]->scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
         m_meteors[i]->rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
