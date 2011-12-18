@@ -1,47 +1,64 @@
-uniform sampler2D normalTexture;
-uniform sampler2D diffuseTexture;
-uniform bool useNormalMapping;
-//const vec3 light_pos = vec3(0.,0.,30.);
+uniform sampler2D diffuse_map;
+uniform sampler2D normal_map;
+uniform vec3 camera_pos;
+uniform vec3 light_pos;
+uniform bool normal_mapping_active;
+    
+varying vec3 world_normal; 
+varying vec3 position; 
+varying vec3 tan_space_light_vec;
+
 const vec4 light_color = vec4(1.,1.,1.,1.);
-const int spec_exp = 5;
+const float ka = 0.2;
+const float kd = 0.5;
+const float ks = 0.3;
+const float shininess = 30;
 
-uniform vec3 cameraPosition;
-//varying vec3 norm;
-varying vec3 pos;
-varying vec3 normal;
-varying vec3 inc_light;
 
-void main() {   
+void main() 
+{   
     
-  vec4 diffuse;
+    // Sample the diffuse texture for the pixel's base color.
+    vec4 diffuse_color = texture2D(diffuse_map, gl_TexCoord[0].st); 
+	
+    // Start with the ambient component.
+    gl_FragColor = ka * diffuse_color;
     
-  vec3 norm; 
-  
-  if (useNormalMapping) {
-    norm = texture2D(normalTexture, gl_TexCoord[0].st).rgb * 2.0 - 1.0;
-  } else {
-    norm = normal;
-  }
+    if (normal_mapping_active) {
     
-  //vec3 inc_light_vec = light_pos - pos;
-  vec3 inc_light_vec = normalize(inc_light);
+	// Extract the normal from the normal map.
+	vec3 tan_space_normal = texture2D(normal_map, gl_TexCoord[0].st).rgb * 2.0 - 1.0;
+	tan_space_normal = normalize(tan_space_normal);
+	
+	// Calculate the dot product between the light vector and normal in tangent space.
+	float tan_space_n_dot_l = max(0.0, dot(tan_space_light_vec, tan_space_normal));
+	
+	// Add the diffuse component.
+	gl_FragColor += kd * diffuse_color * light_color * tan_space_n_dot_l;
+    }
     
-  float n_dot_l  = max(0.0, dot(norm, inc_light_vec));
-      
-  diffuse = 0.5 * light_color * n_dot_l;
-      
-   float specular = 0.0;
-  
-  if (n_dot_l != 0) {
-  
-    vec3 line_of_sight = normalize(cameraPosition - pos);
-    vec3 ref_light_vec = normalize(reflect(-inc_light_vec, norm));
-    float r_dot_v = pow(max(0.0, dot(line_of_sight, ref_light_vec)), spec_exp);
-  
-    specular = 0.5 * light_color * r_dot_v;
-  }
-  //vec4 tex_color = 0.5 * texture2D(normalTexture, gl_TexCoord[0].st) + 
-  //		   0.5 * texture2D(brickTexture, gl_TexCoord[0].st);
-  vec4 tex_color = texture2D(diffuseTexture, gl_TexCoord[0].st);
-  gl_FragColor = (diffuse + specular) * vec4(tex_color.rgb,1.0);
+    // Normalize the normal from the object model (not the normal map).
+    vec3 world_norm = normalize(world_normal);
+    
+    // Compute the world space light vector.
+    vec3 world_light_vec = light_pos - position;  
+    world_light_vec = normalize(world_light_vec);  
+   
+    // Dot the world normal with the world light vector.
+    float world_n_dot_l = max(0.0, dot(world_norm, world_light_vec));    
+   
+    if (!normal_mapping_active) {
+	// Add the diffuse component.
+	gl_FragColor += kd * diffuse_color * light_color * world_n_dot_l;
+    }
+    
+    // If light is actually reaching this point.
+    if(world_n_dot_l != 0.0) 
+    { 
+	vec3 camera_vec = normalize(camera_pos - position);   
+	vec3 half_vec = normalize(world_light_vec + camera_vec); 
+	float n_dot_h = max(0.0,dot(world_norm, half_vec));    
+	float spec_power = pow(n_dot_h, shininess); 
+	gl_FragColor += ks * light_color * spec_power; 
+    } 
 }

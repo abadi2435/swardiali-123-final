@@ -19,6 +19,7 @@ extern "C"
 }
 
 static const int MAX_FPS = 120;
+static const int MAX_MODELS = 9;
 
 /**
   Constructor.  Initialize all member variables here.
@@ -36,11 +37,13 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent),
     m_camera.theta = M_PI * 1.5f, m_camera.phi = 0.2f;
     m_camera.fovy = 60.f;
 
-    m_light1Pos = Vector3(0.f, 15.f, 30.f);
+    m_light1Pos = Vector3(10.f, 30.f, -30.f);
 
     m_useNormalMapping = true;
     m_drawDepthMap = false;
     m_focalLength = 10.0;
+    m_useDepthOfField = false;
+    m_numModels = 9;
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -56,7 +59,8 @@ GLWidget::~GLWidget()
         delete fbo;
     glDeleteLists(m_skybox, 1);
     const_cast<QGLContext *>(context())->deleteTexture(m_cubeMap);
-    glmDelete(m_mesh.model);
+    foreach (TransformedModel tm, m_models)
+        glmDelete(tm.model.model);
 }
 
 /**
@@ -96,9 +100,6 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_mesh = ResourceLoader::loadObjModel("./models/orange.obj");
-    cout << "Loaded object mesh..." << endl;
-
     m_skybox = ResourceLoader::loadSkybox();
     cout << "Loaded skybox..." << endl;
 
@@ -109,6 +110,8 @@ void GLWidget::initializeResources()
     cout << "Loaded depth cube map..." << m_depthCubeMap << endl;
 
     loadTextures();
+
+    loadModels();
 
     createShaderPrograms();
     cout << "Loaded shader programs..." << endl;
@@ -125,12 +128,12 @@ void GLWidget::initializeResources()
 void GLWidget::loadCubeMap()
 {
     QList<QFile *> fileList;
-    fileList.append(new QFile("./textures/astra/posx.jpg"));
-    fileList.append(new QFile("./textures/astra/negx.jpg"));
-    fileList.append(new QFile("./textures/astra/posy.jpg"));
-    fileList.append(new QFile("./textures/astra/negy.jpg"));
-    fileList.append(new QFile("./textures/astra/posz.jpg"));
-    fileList.append(new QFile("./textures/astra/negz.jpg"));
+    fileList.append(new QFile("./textures/space/posx.jpg"));
+    fileList.append(new QFile("./textures/space/negx.jpg"));
+    fileList.append(new QFile("./textures/space/posy.jpg"));
+    fileList.append(new QFile("./textures/space/negy.jpg"));
+    fileList.append(new QFile("./textures/space/posz.jpg"));
+    fileList.append(new QFile("./textures/space/negz.jpg"));
     m_cubeMap = ResourceLoader::loadCubeMap(fileList);
 }
 
@@ -166,17 +169,17 @@ void GLWidget::createShaderPrograms()
 }
 
 /**
-  Load all the textures.
+  Load all the textures!
 **/
 void GLWidget::loadTextures() {
     QString filepath;
 
-    filepath = "./textures/concrete.jpg";
+    filepath = "./textures/meteor_COLOR.jpg";
     m_textures["obj_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["obj_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 
-    filepath = "./textures/rough_normal.jpg";
+    filepath = "./textures/meteor_NRM.jpg";
     m_textures["obj_normal"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["obj_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
@@ -190,6 +193,39 @@ void GLWidget::loadTextures() {
     m_textures["floor_normal"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["floor_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+}
+
+/**
+  Load all the models!
+**/
+void GLWidget::loadModels() {
+    Model mesh = ResourceLoader::loadObjModel("./models/meteor.obj");
+    cout << "Loaded object mesh..." << endl;
+    for (int i = 0; i < MAX_MODELS; i++) {
+        m_models.push_back(TransformedModel(mesh, Vector3(0.f,0.f,0.f), Vector3(1.f,1.f,1.f), Vector3(1.0,0.0,0.0), 0.f));
+    }
+    this->randomizeModelTransformations();
+}
+
+void GLWidget::randomizeModelTransformations() {
+    for (int i = 0; i < MAX_MODELS; i++) {
+        m_models[i].translate = Vector3(-MAX_MODELS + 2*i, 5*randDecimal() - 1, 5*randDecimal() - 1);
+        float scaleFactor = 0.5*randDecimal() + 0.75;
+        m_models[i].scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
+        m_models[i].rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
+        m_models[i].rotationDegrees = 360*randDecimal();
+        m_models[i].dr = randDecimal() * 0.15;
+    }
+}
+
+void GLWidget::updateModelPositions() {
+    for (int i = 0; i < MAX_MODELS; i++) {
+        m_models[i].rotationDegrees += m_models[i].dr;
+    }
+}
+
+float GLWidget::randDecimal() {
+    return (rand()%1000)/1000.f;
 }
 
 /**
@@ -253,6 +289,8 @@ void GLWidget::applyPerspectiveCamera(float width, float height)
  **/
 void GLWidget::paintGL()
 {
+    this->updateModelPositions();
+
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -283,29 +321,36 @@ void GLWidget::paintGL()
         renderScene();
         m_framebufferObjects["fbo_1"]->release();
 
-        // Bind the depth of field blur shader passing it the window's height and width
-        m_shaderPrograms["dblur"]->bind();
-        m_shaderPrograms["dblur"]->setUniformValue("height", (float) height);
-        m_shaderPrograms["dblur"]->setUniformValue("width", (float) width);
+        if (!m_useDepthOfField) {
+            applyOrthogonalCamera(width, height);
+            glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
+            renderTexturedQuad(width, height, true);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        } else {
+            // Bind the depth of field blur shader passing it the window's height and width
+            m_shaderPrograms["dblur"]->bind();
+            m_shaderPrograms["dblur"]->setUniformValue("height", (float) height);
+            m_shaderPrograms["dblur"]->setUniformValue("width", (float) width);
 
-        glActiveTexture(GL_TEXTURE3); // Bind the depth texture to slot 3
-        glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
-        glActiveTexture(GL_TEXTURE0);
+            glActiveTexture(GL_TEXTURE3); // Bind the depth texture to slot 3
+            glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_0"]->texture());
+            glActiveTexture(GL_TEXTURE0);
 
-        glActiveTexture(GL_TEXTURE4); // Bind the regular scene texture to slot 4
-        glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
-        glActiveTexture(GL_TEXTURE0);
+            glActiveTexture(GL_TEXTURE4); // Bind the regular scene texture to slot 4
+            glBindTexture(GL_TEXTURE_2D, m_framebufferObjects["fbo_1"]->texture());
+            glActiveTexture(GL_TEXTURE0);
 
-        // Pass the depth map and the regular scene to the shader
-        m_shaderPrograms["dblur"]->setUniformValue("depthtex", GLint(3));
-        m_shaderPrograms["dblur"]->setUniformValue("tex", GLint(4));
+            // Pass the depth map and the regular scene to the shader
+            m_shaderPrograms["dblur"]->setUniformValue("depthtex", GLint(3));
+            m_shaderPrograms["dblur"]->setUniformValue("tex", GLint(4));
 
-        // Draw a quad to the screen
-        applyOrthogonalCamera(width,height);
-        renderTexturedQuad(width, height, true);
+            // Draw a quad to the screen
+            applyOrthogonalCamera(width,height);
+            renderTexturedQuad(width, height, true);
 
-        // Release the shader
-        m_shaderPrograms["dblur"]->release();
+            // Release the shader
+            m_shaderPrograms["dblur"]->release();
+        }
     }
 
     // Display the FPS
@@ -337,28 +382,38 @@ void GLWidget::renderDepthScene() { //this is for the depth
     m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
     m_shaderPrograms["depth"]->setUniformValue("focalLength", m_focalLength);
 
-    // Draw the first object
-    glPushMatrix();
-    glTranslatef(-1.25f,0.f,0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
-    glRotatef(-90.f, 1.0f, 0.f, 0.f);
-    glCallList(m_mesh.idx);
-    glPopMatrix();
+
+    for (int i = 0; i < m_numModels; i++) {
+        glPushMatrix();
+        glTranslatef(m_models[i].translate.x, m_models[i].translate.y, m_models[i].translate.z);
+        glScalef(m_models[i].scale.x, m_models[i].scale.y, m_models[i].scale.z);
+        glRotatef(m_models[i].rotationDegrees, m_models[i].rotationAxis.x, m_models[i].rotationAxis.y, m_models[i].rotationAxis.z);
+        glCallList(m_models[i].model.idx);
+        glPopMatrix();
+    }
+
+//    // Draw the first object
+//    glPushMatrix();
+//    glTranslatef(-1.25f,0.f,0.f);
+//    glScalef(2.0f, 2.0f, 2.0f);
+//    glRotatef(-90.f, 1.0f, 0.f, 0.f);
+//    glCallList(m_mesh.idx);
+//    glPopMatrix();
 
     // Draw the second object
-    glPushMatrix();
+    /*glPushMatrix();
     glTranslatef(1.25f,0.f,0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
+    glScalef(2.0f, 2.0f, 2.0f);
     glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
-    glPopMatrix();
+    glPopMatrix();*/
 
     // Draw the floor
-    glPushMatrix();
+    /*glPushMatrix();
     glTranslatef(-10.f, -1.25f, -10.f);
     glScalef(20.f, 0.f, 20.f);
     this->drawFloor();
-    glPopMatrix();
+    glPopMatrix();*/
     m_shaderPrograms["depth"]->release();
 
     // Disable culling, depth testing and cube maps
@@ -402,29 +457,38 @@ void GLWidget::renderScene() {
     //m_light1Pos.y = 15.f + 15.f * sin(light_theta);
 
     m_shaderPrograms["normalmapping"]->bind();
-    m_shaderPrograms["normalmapping"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["normalmapping"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
-    m_shaderPrograms["normalmapping"]->setUniformValue("diffuseTexture", GLint(1));
-    m_shaderPrograms["normalmapping"]->setUniformValue("normalTexture", GLint(2));
-    m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
+    m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
+    m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
+    m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
+    m_shaderPrograms["normalmapping"]->setUniformValue("normal_map", GLint(2));
+    m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", m_useNormalMapping);
 
-    glPushMatrix();
-    glTranslatef(-1.25f, 0.f, 0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
-    glRotatef(-90.f, 1.0f, 0.f, 0.f);
-    glCallList(m_mesh.idx);
-    glPopMatrix();
+    for (int i = 0; i < m_numModels; i++) {
+        glPushMatrix();
+        glTranslatef(m_models[i].translate.x, m_models[i].translate.y, m_models[i].translate.z);
+        glScalef(m_models[i].scale.x, m_models[i].scale.y, m_models[i].scale.z);
+        glRotatef(m_models[i].rotationDegrees, m_models[i].rotationAxis.x, m_models[i].rotationAxis.y, m_models[i].rotationAxis.z);
+        glCallList(m_models[i].model.idx);
+        glPopMatrix();
+    }
 
-    glPushMatrix();
+//    glPushMatrix();
+//    glTranslatef(-1.25f, 0.f, 0.f);
+//    glScalef(2.0f, 2.0f, 2.0f);
+//    glRotatef(-90.f, 1.0f, 0.f, 0.f);
+//    glCallList(m_mesh.idx);
+//    glPopMatrix();
+
+    /*glPushMatrix();
     glTranslatef(1.25f,0.f,0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
+    glScalef(2.0f, 2.0f, 2.0f);
     glRotatef(90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
-    glPopMatrix();
+    glPopMatrix();*/
 
     m_shaderPrograms["normalmapping"]->release();
 
-
+/*
     //Draw the floor
     glEnable(GL_TEXTURE_2D);
 
@@ -449,7 +513,7 @@ void GLWidget::renderScene() {
     this->drawFloor();
     glPopMatrix();
 
-    m_shaderPrograms["normalmapping"]->release();
+    m_shaderPrograms["normalmapping"]->release(); */
 
     // Disable culling, depth testing and cube maps
     glDisable(GL_CULL_FACE);
@@ -595,6 +659,11 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             m_focalLength -= 0.1;
             break;
         }
+        case Qt::Key_B:
+        {
+            m_useDepthOfField = !m_useDepthOfField;
+            break;
+        }
     }
 }
 
@@ -615,7 +684,8 @@ void GLWidget::paintText()
     // QGLWidget's renderText takes xy coordinates, a string, and a font
     renderText(10, 20, "FPS: " + QString::number((int) (m_prevFps)), m_font);
     renderText(10, 35, "S: Save screenshot", m_font);
-    renderText(10, 50, "N: Toggle normal mapping", m_font);
+    renderText(10, 50, "N: Toggle normal mapping: " + QString::number((int) (m_useNormalMapping)), m_font);
     renderText(10, 65, "D: Draw depth map on/off", m_font);
     renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
+    renderText(10, 95, "B: Toggle depth of field", m_font);
 }

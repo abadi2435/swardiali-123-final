@@ -18,9 +18,9 @@ void OrbitCamera::mouseWheel(float delta)
 }
 
 Vector3 OrbitCamera::getCameraPosition() {
-    float x = cos(theta);
+    float x = cos(theta) * cos(phi);
     float y = sin(phi);
-    float z = sin(theta);
+    float z = sin(theta) * cos(phi);
 
     return zoom * Vector3(x,y,z);
 }
