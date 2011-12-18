@@ -19,7 +19,6 @@ extern "C"
 }
 
 static const int MAX_FPS = 120;
-static const int MAX_MODELS = 9;
 
 /**
   Constructor.  Initialize all member variables here.
@@ -37,14 +36,11 @@ m_font("Deja Vu Sans Mono", 8, 4)
     m_camera.theta = M_PI * 1.5f, m_camera.phi = 0.2f;
     m_camera.fovy = 60.f;
 
-    m_light1Pos = Vector3(10.f, 30.f, -30.f);
-
     m_useNormalMapping = true;
     m_drawDepthMap = false;
     m_focalLength = 5.0;
     m_zfocus = .5;
     m_useDepthOfField = false;
-    m_numModels = 9;
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -58,10 +54,6 @@ GLWidget::~GLWidget()
         delete sp;
     foreach (QGLFramebufferObject *fbo, m_framebufferObjects)
         delete fbo;
-    glDeleteLists(m_skybox, 1);
-    const_cast<QGLContext *>(context())->deleteTexture(m_cubeMap);
-    foreach (TransformedModel tm, m_models)
-        glmDelete(tm.model.model);
 }
 
 /**
@@ -101,21 +93,11 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_skybox = ResourceLoader::loadSkybox();
-    cout << "Loaded skybox..." << endl;
-
-    loadCubeMap();
-    cout << "Loaded cube map... " << m_cubeMap << endl;
-
     loadDepthCubeMap();
     cout << "Loaded blurry depth cube map..." << m_depthCubeMap << endl;
 
     loadDepthCubeMapFocused();
     cout << "Loaded focused depth cube map..." << m_depthCubeMapFocused << endl;
-
-    loadTextures();
-
-    loadModels();
 
     createShaderPrograms();
     cout << "Loaded shader programs..." << endl;
@@ -123,24 +105,14 @@ void GLWidget::initializeResources()
     createFramebufferObjects(width(), height());
     cout << "Loaded framebuffer objects..." << endl;
 
+    m_activeScene = new SpaceScene(this);
+    m_activeScene->initializeResources();
+    cout<< "Loaded active scene..." << endl;
+
     cout << " --- Finish Loading Resources ---" << endl;
 }
 
-/**
-  Load a cube map for the skybox
- **/
-void GLWidget::loadCubeMap()
-{
-    QList<QFile *> fileList;
 
-    fileList.append(new QFile("./textures/space/posx.jpg"));
-    fileList.append(new QFile("./textures/space/negx.jpg"));
-    fileList.append(new QFile("./textures/space/posy.jpg"));
-    fileList.append(new QFile("./textures/space/negy.jpg"));
-    fileList.append(new QFile("./textures/space/posz.jpg"));
-    fileList.append(new QFile("./textures/space/negz.jpg"));
-    m_cubeMap = ResourceLoader::loadCubeMap(fileList);
-}
 
 /**
   Load a pure white cube box for rendering the background blurry
@@ -188,75 +160,6 @@ void GLWidget::createShaderPrograms()
                                                                  "./shaders/depth.frag");
 }
 
-/**
-  Load all the textures!
-**/
-void GLWidget::loadTextures() {
-    QString filepath;
-
-    filepath = "./textures/meteor_COLOR.jpg";
-    m_textures["obj_diffuse"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["obj_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
-
-    filepath = "./textures/meteor_NRM.jpg";
-    m_textures["obj_normal"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["obj_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
-
-    filepath = "./textures/meteor_SPEC.jpg";
-    m_textures["obj_spec"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["obj_spec"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
-
-    filepath = "./textures/floor_diffuse.jpg";
-    m_textures["floor_diffuse"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
-
-//    filepath = "./textures/floor_diffuse.jpg";
-//    m_textures["floor_diffuse"] = ResourceLoader::loadTexture(filepath);
-//    if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-//    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
-//
-//    filepath = "./textures/floor_normal.jpg";
-//    m_textures["floor_normal"] = ResourceLoader::loadTexture(filepath);
-//    if (m_textures["floor_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-//    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
-}
-
-/**
-  Load all the models!
-**/
-void GLWidget::loadModels() {
-    Model mesh = ResourceLoader::loadObjModel("./models/meteor.obj");
-    cout << "Loaded object mesh..." << endl;
-    for (int i = 0; i < MAX_MODELS; i++) {
-        m_models.push_back(TransformedModel(mesh, Vector3(0.f,0.f,0.f), Vector3(1.f,1.f,1.f), Vector3(1.0,0.0,0.0), 0.f));
-    }
-    this->randomizeModelTransformations();
-}
-
-void GLWidget::randomizeModelTransformations() {
-    for (int i = 0; i < MAX_MODELS; i++) {
-        m_models[i].translate = Vector3(-MAX_MODELS + 2*i, 5*randDecimal() - 1, 5*randDecimal() - 1);
-        float scaleFactor = 0.5*randDecimal() + 0.75;
-        m_models[i].scale = Vector3(scaleFactor, scaleFactor, scaleFactor);
-        m_models[i].rotationAxis = Vector3(2*randDecimal() - 1, 2*randDecimal() - 1, 2*randDecimal() - 1);
-        m_models[i].rotationDegrees = 360*randDecimal();
-        m_models[i].dr = randDecimal() * 0.15;
-    }
-}
-
-void GLWidget::updateModelPositions() {
-    for (int i = 0; i < MAX_MODELS; i++) {
-        m_models[i].rotationDegrees += m_models[i].dr;
-    }
-}
-
-float GLWidget::randDecimal() {
-    return (rand()%1000)/1000.f;
-}
 
 /**
   Allocate framebuffer objects.
@@ -287,7 +190,7 @@ void GLWidget::createFramebufferObjects(int width, int height)
 void GLWidget::applyOrthogonalCamera(float width, float height)
 {
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    glLoadIdentity();  //  void drawFloor();
     glOrtho(0, width, height, 0.f, -1.f, 1.f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -319,8 +222,6 @@ void GLWidget::applyPerspectiveCamera(float width, float height)
  **/
 void GLWidget::paintGL()
 {
-    this->updateModelPositions();
-
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -334,7 +235,7 @@ void GLWidget::paintGL()
     // Render the depth scene to framebuffer0
     m_framebufferObjects["fbo_0"]->bind();
     applyPerspectiveCamera(width, height);
-    renderDepthScene();
+    m_activeScene->renderDepthScene();                                                                                     //TODO: change this!
     m_framebufferObjects["fbo_0"]->release();
 
     // User can press "d" to toggle drawing the depth map instead of the final scene
@@ -348,7 +249,7 @@ void GLWidget::paintGL()
         // Render the normal mapped scene to framebuffer1
         m_framebufferObjects["fbo_1"]->bind();
         applyPerspectiveCamera(width, height);
-        renderScene();
+        m_activeScene->renderScene();                                                           //TODO: change this!
         m_framebufferObjects["fbo_1"]->release();
 
         if (!m_useDepthOfField) {
@@ -388,207 +289,30 @@ void GLWidget::paintGL()
     paintText();
 }
 
-/**
-  Renders the scene.  May be called multiple times by paintGL() if necessary.
-**/
-void GLWidget::renderDepthScene() { //this is for the depth
 
-    glDisable(GL_BLEND);
-
-    // Enable depth testing
-    glEnable(GL_DEPTH_TEST);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    //Enable cube maps and draw the skybox
-    glEnable(GL_TEXTURE_CUBE_MAP);
-    if (m_zfocus > 0.3 || m_focalLength < 0.2 ){
-                glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMapFocused);
-    }
-    else {
-                glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMap);
-    }
-    glCallList(m_skybox);
-
-    // Enable culling (back) faces for rendering the dragon
-    glEnable(GL_CULL_FACE);
-
-    // Render the dragon with the refraction shader bound
-    glActiveTexture(GL_TEXTURE0);
-    m_shaderPrograms["depth"]->bind();
-
-    m_shaderPrograms["depth"]->setUniformValue("camPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["depth"]->setUniformValue("focalLength", m_focalLength);
-    m_shaderPrograms["depth"]->setUniformValue("zfocus", m_zfocus);
-
-    for (int i = 0; i < m_numModels; i++) {
-        glPushMatrix();
-        glTranslatef(m_models[i].translate.x, m_models[i].translate.y, m_models[i].translate.z);
-        glScalef(m_models[i].scale.x, m_models[i].scale.y, m_models[i].scale.z);
-        glRotatef(m_models[i].rotationDegrees, m_models[i].rotationAxis.x, m_models[i].rotationAxis.y, m_models[i].rotationAxis.z);
-        glCallList(m_models[i].model.idx);
-        glPopMatrix();
-    }
-
-//    // Draw the first object
-//    glPushMatrix();
-//    glTranslatef(-1.25f,0.f,0.f);
-//    glScalef(2.0f, 2.0f, 2.0f);
-//    glRotatef(-90.f, 1.0f, 0.f, 0.f);
-//    glCallList(m_mesh.idx);
-//    glPopMatrix();
-
-    // Draw the second object
-    /*glPushMatrix();
-    glTranslatef(1.25f,0.f,0.f);
-    glScalef(2.0f, 2.0f, 2.0f);
-    glRotatef(90.f, 1.0f, 0.f, 0.f);
-    glCallList(m_mesh.idx);
-    glPopMatrix();*/
-
-    // Draw the floor
-    /*glPushMatrix();
-    glTranslatef(-10.f, -1.25f, -10.f);
-    glScalef(20.f, 0.f, 20.f);
-    this->drawFloor();
-    glPopMatrix();*/
-
-    m_shaderPrograms["depth"]->release();
-
-    // Disable culling, depth testing and cube maps
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST); //why?
-    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
-    glDisable(GL_TEXTURE_CUBE_MAP);
-}
-
-
-/**
-  Renders the scene.  May be called multiple times by paintGL() if necessary.
-**/
-void GLWidget::renderScene() {
-
-    // Enable depth testing
-    glEnable(GL_DEPTH_TEST);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    // Enable cube maps and draw the skybox
-    glEnable(GL_TEXTURE_CUBE_MAP);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubeMap);
-    glCallList(m_skybox);
-
-    // Enable culling (back) faces for rendering the dragon
-    glEnable(GL_CULL_FACE);
-
-    // Enable 2D texture and draw the dragon
-    glEnable(GL_TEXTURE_2D);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_textures["obj_diffuse"]);
-    glActiveTexture(GL_TEXTURE0);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_textures["obj_normal"]);
-    glActiveTexture(GL_TEXTURE0);
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, m_textures["obj_spec"]);
-    glActiveTexture(GL_TEXTURE0);
-
-    float light_theta = (m_clock.elapsed() % 5000) / (5000.f/(2*M_PI));
-    //m_light1Pos.x = 15.f * cos(light_theta);
-    //m_light1Pos.y = 15.f + 15.f * sin(light_theta);
-
-    m_shaderPrograms["normalmapping"]->bind();
-    m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
-    m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
-    m_shaderPrograms["normalmapping"]->setUniformValue("normal_map", GLint(2));
-    m_shaderPrograms["normalmapping"]->setUniformValue("specular_map", GLint(3));
-    m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", m_useNormalMapping);
-
-    for (int i = 0; i < m_numModels; i++) {
-        glPushMatrix();
-        glTranslatef(m_models[i].translate.x, m_models[i].translate.y, m_models[i].translate.z);
-        glScalef(m_models[i].scale.x, m_models[i].scale.y, m_models[i].scale.z);
-        glRotatef(m_models[i].rotationDegrees, m_models[i].rotationAxis.x, m_models[i].rotationAxis.y, m_models[i].rotationAxis.z);
-        glCallList(m_models[i].model.idx);
-        glPopMatrix();
-    }
-
-//    glPushMatrix();
-//    glTranslatef(-1.25f, 0.f, 0.f);
-//    glScalef(2.0f, 2.0f, 2.0f);
-//    glRotatef(-90.f, 1.0f, 0.f, 0.f);
-//    glCallList(m_mesh.idx);
-//    glPopMatrix();
-
-    /*glPushMatrix();
-    glTranslatef(1.25f,0.f,0.f);
-    glScalef(2.0f, 2.0f, 2.0f);
-    glRotatef(90.f, 1.0f, 0.f, 0.f);
-    glCallList(m_mesh.idx);
-    glPopMatrix();*/
-
-    m_shaderPrograms["normalmapping"]->release();
-
-/*
-    //Draw the floor
-    glEnable(GL_TEXTURE_2D);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_textures["piggy"]);
-    glActiveTexture(GL_TEXTURE0);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_textures["floor_normal"]);
-    glActiveTexture(GL_TEXTURE0);
-
-    m_shaderPrograms["normalmapping"]->bind();
-    m_shaderPrograms["normalmapping"]->setUniformValue("cameraPosition", m_camera.getCameraPosition().x, m_camera.getCameraPosition().y, m_camera.getCameraPosition().z);
-    m_shaderPrograms["normalmapping"]->setUniformValue("light1Position", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
-    m_shaderPrograms["normalmapping"]->setUniformValue("diffuseTexture", GLint(1));
-    m_shaderPrograms["normalmapping"]->setUniformValue("normalTexture", GLint(2));
-    m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
-
-    glPushMatrix();
-    glTranslatef(1.25f,-5.f,0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
-    glRotatef(0.f, 1.0f, 0.f, 0.f);
-    glCallList(m_mesh2.idx);
-    glPopMatrix();
-
-    m_shaderPrograms["normalmapping"]->release(); */
-
-    // Disable culling, depth testing and cube maps
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
-    glDisable(GL_TEXTURE_CUBE_MAP);
-}
-
-/**
-  Draws the floor.
-**/
-void GLWidget::drawFloor() {
-    glBegin(GL_QUADS);
-    glNormal3f(0.f, 1.f, 0.f);
-    glTexCoord2f(0.f, 0.f);
-    glVertex3f(0.f, 0.f, 0.f);
-
-    glNormal3f(0.f, 1.f, 0.f);
-    glTexCoord2f(0.f, 1.f);
-    glVertex3f(0.f, 0.f, 1.f);
-
-    glNormal3f(0.f, 1.f, 0.f);
-    glTexCoord2f(1.f, 1.f);
-    glVertex3f(1.f, 0.f, 1.f);
-
-    glNormal3f(0.f, 1.f, 0.f);
-    glTexCoord2f(1.f, 0.f);
-    glVertex3f(1.f, 0.f, 0.f);
-
-    glEnd();
-}
+///**
+//  Draws the floor.
+//**/
+//void GLWidget::drawFloor() {
+//    glBegin(GL_QUADS);
+//    glNormal3f(0.f, 1.f, 0.f);
+//    glTexCoord2f(0.f, 0.f);
+//    glVertex3f(0.f, 0.f, 0.f);
+//
+//    glNormal3f(0.f, 1.f, 0.f);
+//    glTexCoord2f(0.f, 1.f);
+//    glVertex3f(0.f, 0.f, 1.f);
+//
+//    glNormal3f(0.f, 1.f, 0.f);
+//    glTexCoord2f(1.f, 1.f);
+//    glVertex3f(1.f, 0.f, 1.f);
+//
+//    glNormal3f(0.f, 1.f, 0.f);
+//    glTexCoord2f(1.f, 0.f);
+//    glVertex3f(1.f, 0.f, 0.f);
+//
+//    glEnd();
+//}
 
 /**
   Called when the mouse is dragged.  Rotates the camera based on mouse movement.

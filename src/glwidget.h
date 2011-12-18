@@ -11,28 +11,13 @@
 #include "vector.h"
 #include "resourceloader.h"
 
+#include "src/scene.h"
+#include "src/spacescene.h"
+
 class QGLShaderProgram;
 class QGLFramebufferObject;
 
-/*! Store a Model with its transformations. */
-struct TransformedModel {
-    Model model; //! The object model
-    Vector3 translate, scale; //! The scale and translate vectors
-    Vector3 rotationAxis; //! The axis of rotation
-    float rotationDegrees; //! The number of degrees to rotate
-    float dr;
 
-    /*! Default constructor */
-    TransformedModel() {}
-
-    /*! Copy constructor */
-    TransformedModel(const TransformedModel& tm) :
-            model(tm.model), translate(tm.translate), scale(tm.scale), rotationAxis(tm.rotationAxis), rotationDegrees(tm.rotationDegrees) {}
-
-    /*! Constructor */
-    TransformedModel(Model model, Vector3 translate, Vector3 scale, Vector3 rotationAxis, float degrees) :
-            model(model), translate(translate), scale(scale), rotationAxis(rotationAxis), rotationDegrees(degrees){}
-};
 
 class GLWidget : public QGLWidget
 {
@@ -41,6 +26,20 @@ class GLWidget : public QGLWidget
 public:
     GLWidget(QWidget *parent = 0);
     ~GLWidget();
+
+    // Resources
+    QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
+    QHash<QString, QGLFramebufferObject *> m_framebufferObjects; // hash map of all framebuffer objects
+    GLuint m_depthCubeMap; // all white cubeMap texture ID
+    GLuint m_depthCubeMapFocused; // all black cubeMap texture ID
+
+    OrbitCamera m_camera;
+
+    bool m_useNormalMapping;
+    bool m_drawDepthMap;
+    float m_focalLength;
+    bool m_useDepthOfField;
+    float m_zfocus;
 
 protected:
     // Overridden QGLWidget methods
@@ -54,22 +53,16 @@ protected:
 
     // Initialization code
     void initializeResources();
-    void loadCubeMap();
     void loadDepthCubeMap();
     void loadDepthCubeMapFocused();
     void createShaderPrograms();
     void createFramebufferObjects(int width, int height);
-    void loadTextures();
-    void loadModels();
 
     // Drawing code
     void applyOrthogonalCamera(float width, float height);
     void applyPerspectiveCamera(float width, float height);
     void renderTexturedQuad(int width, int height, bool flip);
-    void renderScene();
-    void renderDepthScene();
     void paintText();
-    void drawFloor();
 
     void randomizeModelTransformations();
     void updateModelPositions();
@@ -81,30 +74,9 @@ private:
     int m_prevTime;
     float m_prevFps, m_fps;
     Vector2 m_prevMousePos;
-    OrbitCamera m_camera;
 
-    Vector3 m_light1Pos;
-
-    bool m_useNormalMapping;
-    bool m_drawDepthMap;
-    float m_focalLength;
-    bool m_useDepthOfField;
-    int m_numModels;
-    float m_zfocus;
-
-
-    // Resources
-    QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
-    QHash<QString, QGLFramebufferObject *> m_framebufferObjects; // hash map of all framebuffer objects
-    Model m_mesh; // object model
-    Model m_mesh2; //second object model
-    GLuint m_skybox; // skybox call list ID
-    GLuint m_cubeMap; // cubeMap texture ID
-    GLuint m_depthCubeMap; // all white cubeMap texture ID
-    GLuint m_depthCubeMapFocused; // all black cubeMap texture ID
-
-    QHash<QString, GLuint> m_textures; // hash map of all the texture IDs
-    QVector<TransformedModel> m_models; // hash map of all the object models (and their transformations)
+    Scene* m_activeScene;
+    Scene* m_inactiveScene;
 
     QFont m_font; // font for rendering text
 
