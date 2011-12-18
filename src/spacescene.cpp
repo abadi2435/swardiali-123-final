@@ -10,6 +10,7 @@ static const int MAX_MODELS = 9;
 SpaceScene::SpaceScene(GLWidget* widget) : Scene(widget)
 {
     m_light1Pos = Vector3(10.f, 30.f, -30.f);
+    m_internalTimer = 0;
 }
 
 SpaceScene::~SpaceScene(){
@@ -121,7 +122,8 @@ float SpaceScene::randDecimal() {
 }
 
 void SpaceScene::moveSpaceShip() {
-    float theta = (m_widget->m_clock.elapsed() % 100000) / (100000.f/(2*M_PI));
+    m_internalTimer++;
+    float theta = (m_internalTimer % 10000) / (10000.f/(2*M_PI));
 
     m_spaceship.translate.x = -10*cos(theta);
     m_spaceship.translate.z = 10*sin(theta);

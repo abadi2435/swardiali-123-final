@@ -44,6 +44,7 @@ public:
     float m_zfocus;
     bool m_flyMode;
     bool m_displayHelp;
+    bool m_paused;
 
 protected:
     // Overridden QGLWidget methods
