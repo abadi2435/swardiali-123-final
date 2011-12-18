@@ -1,5 +1,6 @@
 uniform sampler2D diffuse_map;
 uniform sampler2D normal_map;
+uniform sampler2D specular_map;
 uniform vec3 camera_pos;
 uniform vec3 light_pos;
 uniform bool normal_mapping_active;
@@ -11,8 +12,8 @@ varying vec3 tan_space_light_vec;
 const vec4 light_color = vec4(1.,1.,1.,1.);
 const float ka = 0.2;
 const float kd = 0.5;
-const float ks = 0.3;
-const float shininess = 30;
+const float ks = 0.5;
+const float shininess = 10;
 
 
 void main() 
@@ -58,7 +59,16 @@ void main()
 	vec3 camera_vec = normalize(camera_pos - position);   
 	vec3 half_vec = normalize(world_light_vec + camera_vec); 
 	float n_dot_h = max(0.0,dot(world_norm, half_vec));    
-	float spec_power = pow(n_dot_h, shininess); 
-	gl_FragColor += ks * light_color * spec_power; 
+	float spec_power = pow(n_dot_h, shininess);
+	
+	float spec_constant;
+	
+	if (normal_mapping_active) {
+	    spec_constant = texture2D(specular_map, gl_TexCoord[0].st).r;
+	} else {
+	    spec_constant = ks;
+	}
+	
+	gl_FragColor += spec_constant * light_color * spec_power; 
     } 
 }

@@ -203,6 +203,11 @@ void GLWidget::loadTextures() {
     if (m_textures["obj_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 
+    filepath = "./textures/meteor_SPEC.jpg";
+    m_textures["obj_spec"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["obj_spec"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
     filepath = "./textures/floor_diffuse.jpg";
     m_textures["floor_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
@@ -479,6 +484,10 @@ void GLWidget::renderScene() {
     glBindTexture(GL_TEXTURE_2D, m_textures["obj_normal"]);
     glActiveTexture(GL_TEXTURE0);
 
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, m_textures["obj_spec"]);
+    glActiveTexture(GL_TEXTURE0);
+
     float light_theta = (m_clock.elapsed() % 5000) / (5000.f/(2*M_PI));
     //m_light1Pos.x = 15.f * cos(light_theta);
     //m_light1Pos.y = 15.f + 15.f * sin(light_theta);
@@ -488,6 +497,7 @@ void GLWidget::renderScene() {
     m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_shaderPrograms["normalmapping"]->setUniformValue("normal_map", GLint(2));
+    m_shaderPrograms["normalmapping"]->setUniformValue("specular_map", GLint(3));
     m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", m_useNormalMapping);
 
     for (int i = 0; i < m_numModels; i++) {
@@ -739,7 +749,7 @@ void GLWidget::paintText()
     // QGLWidget's renderText takes xy coordinates, a string, and a font
     renderText(10, 20, "FPS: " + QString::number((int) (m_prevFps)), m_font);
     renderText(10, 35, "S: Save screenshot", m_font);
-    renderText(10, 50, "N: Toggle normal mapping: " + QString::number((int) (m_useNormalMapping)), m_font);
+    renderText(10, 50, "N: Toggle normal/specular mapping: " + QString::number((int) (m_useNormalMapping)), m_font);
     renderText(10, 65, "D: Draw depth map on/off", m_font);
     renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
     renderText(10, 95, "B: Toggle depth of field", m_font);
