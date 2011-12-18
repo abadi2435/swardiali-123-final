@@ -20,7 +20,8 @@ HEADERS += src/glwidget.h \
     support/camera.h \
     lib/targa.h \
     src/scene.h \
-    src/spacescene.h
+    src/spacescene.h \
+    src/tablescene.h
 SOURCES += src/glwidget.cpp \
     lib/targa.cpp \
     lib/glm.cpp \
@@ -29,7 +30,8 @@ SOURCES += src/glwidget.cpp \
     support/main.cpp \
     support/camera.cpp \
     src/scene.cpp \
-    src/spacescene.cpp
+    src/spacescene.cpp \
+    src/tablescene.cpp
 FORMS += mainwindow.ui \
     support/mainwindow.ui
 OTHER_FILES += shaders/refract.vert \
