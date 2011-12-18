@@ -23,10 +23,13 @@ public:
     virtual void updateModelPositions();
     virtual float randDecimal();
 
+    virtual void moveModels();
+    virtual void moveSpaceShip();
+
 private:
     QVector<TransformedModel*> m_meteors; // vector of all the object models (and their transformations)
 
-    TransformedModel m_spaceship;
+    TransformedModel m_spaceship, m_spaceship2, m_spaceship3;
 };
 
 #endif // SPACESCENE_H

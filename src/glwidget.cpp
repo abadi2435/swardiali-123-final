@@ -249,7 +249,7 @@ void GLWidget::paintGL()
         // Render the normal mapped scene to framebuffer1
         m_framebufferObjects["fbo_1"]->bind();
         applyPerspectiveCamera(width, height);
-        m_activeScene->renderScene();                                                           //TODO: change this!
+        m_activeScene->renderScene();
         m_framebufferObjects["fbo_1"]->release();
 
         if (!m_useDepthOfField) {
@@ -284,6 +284,8 @@ void GLWidget::paintGL()
             m_shaderPrograms["dblur"]->release();
         }
     }
+
+    m_activeScene->moveModels();
 
     // Display the FPS
     paintText();
@@ -335,11 +337,11 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
     m_prevMousePos.x = event->x();
     m_prevMousePos.y = event->y();
 
-    QImage image = m_framebufferObjects["fbo_0"]->toImage();
-    QRgb color = image.pixel(m_prevMousePos.x, m_prevMousePos.y);
-    cout<<qRed((float) (color));
-    m_zfocus = qRed((float) ((float)color))/255.0;
-
+    if (event->button() ==  2) {
+        QImage image = m_framebufferObjects["fbo_0"]->toImage();
+        QRgb color = image.pixel(m_prevMousePos.x, m_prevMousePos.y);
+        m_zfocus = qRed((float) ((float)color))/255.0;
+    }
 }
 
 /**

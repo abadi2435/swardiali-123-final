@@ -68,6 +68,11 @@ void SpaceScene::loadTextures() {
     m_textures["obj_spec"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["obj_spec"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+
+    filepath = "./models/fighter/ghoul_map_jpg.jpg";
+    m_textures["fighter_diffuse"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["fighter_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 }
 
 /**
@@ -85,7 +90,12 @@ void SpaceScene::loadModels() {
     this->randomizeModelTransformations();
 
     Model ship = ResourceLoader::loadObjModel("./models/fighter/GhoulOBJ.obj");
-    m_spaceship = TransformedModel(ship, Vector3(0.f, 0.f, -5.f), Vector3(1.f, 1.f, 1.f), Vector3(1.0,0.0,0.0), 0.f);
+    m_spaceship = TransformedModel(ship, Vector3(0.f, 3.f, 0.f), Vector3(0.25f, 0.25f, 0.25f), Vector3(0.0,1.0,0.0), 0.f);
+    m_allModels.push_back(&m_spaceship);
+    m_spaceship2 = TransformedModel(ship, Vector3(0.f, 3.3f, 0.f), Vector3(0.25f, 0.25f, 0.25f), Vector3(0.0,1.0,0.0), 0.f);
+    m_allModels.push_back(&m_spaceship2);
+    m_spaceship3 = TransformedModel(ship, Vector3(0.f, 2.7f, 0.f), Vector3(0.25f, 0.25f, 0.25f), Vector3(0.0,1.0,0.0), 0.f);
+    m_allModels.push_back(&m_spaceship3);
 }
 
 void SpaceScene::randomizeModelTransformations() {
@@ -109,6 +119,24 @@ float SpaceScene::randDecimal() {
     return (rand()%1000)/1000.f;
 }
 
+void SpaceScene::moveSpaceShip() {
+    float theta = (m_widget->m_clock.elapsed() % 100000) / (100000.f/(2*M_PI));
+
+    m_spaceship.translate.x = -10*cos(theta);
+    m_spaceship.translate.z = 10*sin(theta);
+
+    //m_widget->m_camera.theta = theta - M_PI/2;
+
+    m_spaceship2.translate.x = -10*cos(theta - 0.05);
+    m_spaceship2.translate.z = 10*sin(theta - 0.05);
+
+    m_spaceship3.translate.x = -10*cos(theta - 0.05);
+    m_spaceship3.translate.z = 10*sin(theta - 0.05);
+
+    m_spaceship.rotationDegrees = (theta * 180/M_PI) - 90;
+    m_spaceship2.rotationDegrees = ((theta - 0.05) * 180/M_PI) - 90;
+    m_spaceship3.rotationDegrees = ((theta - 0.05) * 180/M_PI) - 90;
+}
 
 /**
   Renders the scene.  May be called multiple times by paintGL() if necessary.
@@ -160,11 +188,48 @@ void SpaceScene::renderScene() {
     }
     m_widget->m_shaderPrograms["normalmapping"]->release();
 
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_textures["fighter_diffuse"]);
+    glActiveTexture(GL_TEXTURE0);this->
+
+    m_widget->m_shaderPrograms["normalmapping"]->bind();
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("camera_pos", m_widget->m_camera.getCameraPosition().x, m_widget->m_camera.getCameraPosition().y, m_widget->m_camera.getCameraPosition().z);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+
+    glPushMatrix();
+    glTranslatef(m_spaceship.translate.x, m_spaceship.translate.y, m_spaceship.translate.z);
+    glScalef(m_spaceship.scale.x, m_spaceship.scale.y, m_spaceship.scale.z);
+    glRotatef(m_spaceship.rotationDegrees, m_spaceship.rotationAxis.x, m_spaceship.rotationAxis.y, m_spaceship.rotationAxis.z);
+    glCallList(m_spaceship.model.idx);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(m_spaceship2.translate.x, m_spaceship2.translate.y, m_spaceship2.translate.z);
+    glScalef(m_spaceship2.scale.x, m_spaceship2.scale.y, m_spaceship2.scale.z);
+    glRotatef(m_spaceship2.rotationDegrees, m_spaceship2.rotationAxis.x, m_spaceship2.rotationAxis.y, m_spaceship2.rotationAxis.z);
+    glCallList(m_spaceship2.model.idx);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(m_spaceship3.translate.x, m_spaceship3.translate.y, m_spaceship3.translate.z);
+    glScalef(m_spaceship3.scale.x, m_spaceship3.scale.y, m_spaceship3.scale.z);
+    glRotatef(m_spaceship3.rotationDegrees, m_spaceship3.rotationAxis.x, m_spaceship3.rotationAxis.y, m_spaceship3.rotationAxis.z);
+    glCallList(m_spaceship3.model.idx);
+    glPopMatrix();
+
+    m_widget->m_shaderPrograms["normalmapping"]->release();
+
     // Disable culling, depth testing and cube maps
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_CUBE_MAP,0);
     glDisable(GL_TEXTURE_CUBE_MAP);
+}
 
+void SpaceScene::moveModels() {
     this->updateModelPositions();
+    this->moveSpaceShip();
 }

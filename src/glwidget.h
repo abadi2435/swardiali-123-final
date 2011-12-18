@@ -27,6 +27,8 @@ public:
     GLWidget(QWidget *parent = 0);
     ~GLWidget();
 
+    QTime m_clock;
+
     // Resources
     QHash<QString, QGLShaderProgram *> m_shaderPrograms; // hash map of all shader programs
     QHash<QString, QGLFramebufferObject *> m_framebufferObjects; // hash map of all framebuffer objects
@@ -70,7 +72,6 @@ protected:
 
 private:
     QTimer m_timer;
-    QTime m_clock;
     int m_prevTime;
     float m_prevFps, m_fps;
     Vector2 m_prevMousePos;

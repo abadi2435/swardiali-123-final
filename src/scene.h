@@ -51,6 +51,8 @@ public:
     virtual void renderScene() {};
     virtual void renderDepthScene();
 
+    virtual void moveModels() {};
+
 protected:
     QVector<TransformedModel*> m_allModels;
 
