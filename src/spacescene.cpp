@@ -200,6 +200,9 @@ void SpaceScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_map", GLint(2));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("specular_map", GLint(3));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", m_widget->m_useNormalMapping);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 0.9, 1, 1);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ka", GLfloat(0.2));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("kd", GLfloat(0.5));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.3));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(10));
 
@@ -223,6 +226,9 @@ void SpaceScene::renderScene() {
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_pos", m_light1Pos.x, m_light1Pos.y, m_light1Pos.z);
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("diffuse_map", GLint(1));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("normal_mapping_active", false);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("light_color", 1, 1, 1, 1);
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ka", GLfloat(0.4));
+    m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("kd", GLfloat(0.5));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("ks", GLfloat(0.9));
     m_widget->m_shaderPrograms["normalmapping"]->setUniformValue("shininess", GLfloat(30));
 
