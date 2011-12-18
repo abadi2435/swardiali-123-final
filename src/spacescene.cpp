@@ -70,7 +70,7 @@ void SpaceScene::loadTextures() {
     if (m_textures["obj_spec"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 
-    filepath = "./models/fighter/ghoul_map_jpg.jpg";
+    filepath = "./models/fighter/ghoul_map_edit.jpg";
     m_textures["fighter_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["fighter_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
