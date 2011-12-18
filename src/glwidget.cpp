@@ -57,6 +57,7 @@ GLWidget::~GLWidget()
     glDeleteLists(m_skybox, 1);
     const_cast<QGLContext *>(context())->deleteTexture(m_cubeMap);
     glmDelete(m_mesh.model);
+    glmDelete(m_mesh2.model);
 }
 
 /**
@@ -96,8 +97,10 @@ void GLWidget::initializeResources()
     // by the video card.  But that's a pain to do so we're not going to.
     cout << "--- Loading Resources ---" << endl;
 
-    m_mesh = ResourceLoader::loadObjModel("./models/fighter/GhoulOBJ.obj");
+    m_mesh = ResourceLoader::loadObjModel("./models/ikea/JONAS_desk.obj");
+    m_mesh2 = ResourceLoader::loadObjModel("./models/piggy/PiggyBank.obj");
     cout << "Loaded object mesh..." << endl;
+
 
     m_skybox = ResourceLoader::loadSkybox();
     cout << "Loaded skybox..." << endl;
@@ -128,12 +131,21 @@ void GLWidget::initializeResources()
 void GLWidget::loadCubeMap()
 {
     QList<QFile *> fileList;
-    fileList.append(new QFile("./textures/astra/posx.jpg"));
-    fileList.append(new QFile("./textures/astra/negx.jpg"));
-    fileList.append(new QFile("./textures/astra/posy.jpg"));
-    fileList.append(new QFile("./textures/astra/negy.jpg"));
-    fileList.append(new QFile("./textures/astra/posz.jpg"));
-    fileList.append(new QFile("./textures/astra/negz.jpg"));
+    fileList.append(new QFile("./textures/hotel/posx.jpg"));
+    fileList.append(new QFile("./textures/hotel/negx.jpg"));
+    fileList.append(new QFile("./textures/hotel/posy.jpg"));
+    fileList.append(new QFile("./textures/hotel/negy.jpg"));
+    fileList.append(new QFile("./textures/hotel/posz.jpg"));
+    fileList.append(new QFile("./textures/hotel/negz.jpg"));
+
+//    QList<QFile *> fileList;
+//    fileList.append(new QFile("./textures/church/posx.jpg"));
+//    fileList.append(new QFile("./textures/church/negx.jpg"));
+//    fileList.append(new QFile("./textures/church/posy.jpg"));
+//    fileList.append(new QFile("./textures/church/negy.jpg"));
+//    fileList.append(new QFile("./textures/church/posz.jpg"));
+//    fileList.append(new QFile("./textures/church/negz.jpg"));
+
     m_cubeMap = ResourceLoader::loadCubeMap(fileList);
 }
 
@@ -189,7 +201,7 @@ void GLWidget::createShaderPrograms()
 void GLWidget::loadTextures() {
     QString filepath;
 
-    filepath = "./models/fighter/texture/ghoul_map_jpg.jpg";
+    filepath = "./models/TBL03101.jpg";
     m_textures["obj_diffuse"] = ResourceLoader::loadTexture(filepath);
     if (m_textures["obj_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
@@ -199,15 +211,20 @@ void GLWidget::loadTextures() {
     if (m_textures["obj_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 
-    filepath = "./textures/floor_diffuse.jpg";
-    m_textures["floor_diffuse"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+    filepath = "./models/piggy/PiggyBankUVTex.jpg";
+    m_textures["piggy"] = ResourceLoader::loadTexture(filepath);
+    if (m_textures["piggy"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
     else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 
-    filepath = "./textures/floor_normal.jpg";
-    m_textures["floor_normal"] = ResourceLoader::loadTexture(filepath);
-    if (m_textures["floor_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
-    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+//    filepath = "./textures/floor_diffuse.jpg";
+//    m_textures["floor_diffuse"] = ResourceLoader::loadTexture(filepath);
+//    if (m_textures["floor_diffuse"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+//    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
+//
+//    filepath = "./textures/floor_normal.jpg";
+//    m_textures["floor_normal"] = ResourceLoader::loadTexture(filepath);
+//    if (m_textures["floor_normal"] == -1) {cout << "Failed to load " << filepath.toUtf8().constData() << "... " << endl;}
+//    else {cout << "Loaded " << filepath.toUtf8().constData() << "... " << endl;}
 }
 
 /**
@@ -365,26 +382,27 @@ void GLWidget::renderDepthScene() { //this is for the depth
 
     // Draw the first object
     glPushMatrix();
-    glTranslatef(-1.25f,0.f,0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
+    glTranslatef(-1.25f, -25.f, 0.f);
+    glScalef(30.0f, 30.0f, 30.0f);
     glRotatef(-90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
 
     // Draw the second object
-//    glPushMatrix();
-//    glTranslatef(1.25f,0.f,0.f);
-//    glScalef(5.0f, 5.0f, 5.0f);
-//    glRotatef(90.f, 1.0f, 0.f, 0.f);
-//    glCallList(m_mesh.idx);
-//    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(1.25f,-5.f,0.f);
+    glScalef(5.0f, 5.0f, 5.0f);
+    glRotatef(0.f, 1.0f, 0.f, 0.f);
+    glCallList(m_mesh2.idx);
+    glPopMatrix();
+
 
     // Draw the floor
-    glPushMatrix();
-    glTranslatef(-10.f, -1.25f, -10.f);
-    glScalef(20.f, 0.f, 20.f);
-    this->drawFloor();
-    glPopMatrix();
+//    glPushMatrix();
+//    glTranslatef(-10.f, -1.25f, -10.f);
+//    glScalef(20.f, 0.f, 20.f);
+//    this->drawFloor();
+//    glPopMatrix();
     m_shaderPrograms["depth"]->release();
 
     // Disable culling, depth testing and cube maps
@@ -435,18 +453,11 @@ void GLWidget::renderScene() {
     m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
 
     glPushMatrix();
-    glTranslatef(-1.25f, 0.f, 0.f);
-    glScalef(5.0f, 5.0f, 5.0f);
+    glTranslatef(-1.25f, -25.f, 0.f);
+    glScalef(30.0f, 30.0f, 30.0f);
     glRotatef(-90.f, 1.0f, 0.f, 0.f);
     glCallList(m_mesh.idx);
     glPopMatrix();
-
-//    glPushMatrix();
-//    glTranslatef(1.25f,0.f,0.f);
-//    glScalef(5.0f, 5.0f, 5.0f);
-//    glRotatef(90.f, 1.0f, 0.f, 0.f);
-//    glCallList(m_mesh.idx);
-//    glPopMatrix();
 
     m_shaderPrograms["normalmapping"]->release();
 
@@ -455,7 +466,7 @@ void GLWidget::renderScene() {
     glEnable(GL_TEXTURE_2D);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_textures["floor_diffuse"]);
+    glBindTexture(GL_TEXTURE_2D, m_textures["piggy"]);
     glActiveTexture(GL_TEXTURE0);
 
     glActiveTexture(GL_TEXTURE2);
@@ -470,9 +481,10 @@ void GLWidget::renderScene() {
     m_shaderPrograms["normalmapping"]->setUniformValue("useNormalMapping", m_useNormalMapping);
 
     glPushMatrix();
-    glTranslatef(-10.f, -1.25f, -10.f);
-    glScalef(20.f, 0.f, 20.f);
-    this->drawFloor();
+    glTranslatef(1.25f,-5.f,0.f);
+    glScalef(5.0f, 5.0f, 5.0f);
+    glRotatef(0.f, 1.0f, 0.f, 0.f);
+    glCallList(m_mesh2.idx);
     glPopMatrix();
 
     m_shaderPrograms["normalmapping"]->release();
@@ -672,5 +684,5 @@ void GLWidget::paintText()
     renderText(10, 50, "N: Toggle normal mapping", m_font);
     renderText(10, 65, "D: Draw depth map on/off", m_font);
     renderText(10, 80, "Up/Down: Change focal length = " + QString::number(m_focalLength), m_font);
-    renderText(10, 95, "A/Z: Change focus place = " + QString::number(m_zfocus), m_font);
+    renderText(10, 95, "A/Z: Change focus plane = " + QString::number(m_zfocus), m_font);
 }
