@@ -13,6 +13,7 @@
 
 #include "src/scene.h"
 #include "src/spacescene.h"
+#include "src/tablescene.h"
 
 class QGLShaderProgram;
 class QGLFramebufferObject;

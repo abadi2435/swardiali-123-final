@@ -107,7 +107,7 @@ void GLWidget::initializeResources()
     createFramebufferObjects(width(), height());
     cout << "Loaded framebuffer objects..." << endl;
 
-    m_activeScene = new SpaceScene(this);
+    m_activeScene = new TableScene(this);
     m_activeScene->initializeResources();
     cout<< "Loaded active scene..." << endl;
 
@@ -346,7 +346,9 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
     if (event->button() ==  2) {
         QImage image = m_framebufferObjects["fbo_0"]->toImage();
         QRgb color = image.pixel(m_prevMousePos.x, m_prevMousePos.y);
-        m_zfocus = qRed((float) ((float)color))/255.0;
+        if (qGreen((float) ((float)color))/255.0 > 0.2f) {                                                           //if depth away is close to 0, black and sharp.. clicking sould stay sharp
+            m_zfocus = qRed((float) ((float)color))/255.0;
+        }
     }
 }
 
