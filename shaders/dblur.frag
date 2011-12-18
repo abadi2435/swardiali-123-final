@@ -42,9 +42,9 @@ void main(void) {
     
 
     
-    float numSamples = 0;
+    float numSamples = 1;
     vec4 initial = texture2D(tex, gl_TexCoord[0].st);
-    vec4 sum = vec4(0,0,0,0);
+    vec4 sum = texture2D(tex, gl_TexCoord[0].st);
     for (int i= 0; i<24; i++){
 	vec4 sample = texture2D(tex, gl_TexCoord[0].st + v[i]);
 	float sampleDepth = texture2D(depthtex, gl_TexCoord[0].st + v[i]).x;
@@ -58,11 +58,6 @@ void main(void) {
 	}
     }
 
-    if (numSamples == 0){
-	gl_FragColor = texture2D(tex, gl_TexCoord[0].st);
-    }
-    else {
 	sum = sum/numSamples;
 	gl_FragColor = sum;   
-    }
 }

@@ -106,7 +106,10 @@ void GLWidget::initializeResources()
     cout << "Loaded cube map... " << m_cubeMap << endl;
 
     loadDepthCubeMap();
-    cout << "Loaded depth cube map..." << m_depthCubeMap << endl;
+    cout << "Loaded blurry depth cube map..." << m_depthCubeMap << endl;
+
+    loadDepthCubeMapFocused();
+    cout << "Loaded focused depth cube map..." << m_depthCubeMapFocused << endl;
 
     loadTextures();
 
@@ -135,7 +138,7 @@ void GLWidget::loadCubeMap()
 }
 
 /**
-  Load a pure white cube box for rendering the depths
+  Load a pure white cube box for rendering the background blurry
  **/
 void GLWidget::loadDepthCubeMap()
 {
@@ -151,13 +154,28 @@ void GLWidget::loadDepthCubeMap()
 }
 
 /**
+  Load a pure white cube box for rendering the background in focus.
+ **/
+void GLWidget::loadDepthCubeMapFocused()
+{
+    QList<QFile *> fileList;
+    QFile* black = new QFile("./textures/astra/black.jpeg");
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    fileList.append(black);
+    m_depthCubeMapFocused = ResourceLoader::loadCubeMap(fileList);
+}
+
+/**
   Create shader programs.
  **/
 void GLWidget::createShaderPrograms()
 {
     const QGLContext *ctx = context();
-    m_shaderPrograms["normalmapping"] = ResourceLoader::newShaderProgram(ctx, "./shaders/normalmapping.vert",
-                                                                         "./shaders/normalmapping.frag");
+    m_shaderPrograms["normalmapping"] = ResourceLoader::newShaderProgram(ctx, "./shaders/normalmapping.vert",                                                                         "./shaders/normalmapping.frag");
 
     m_shaderPrograms["dblur"] = ResourceLoader::newFragShaderProgram(ctx, "./shaders/dblur.frag");
 
@@ -326,7 +344,12 @@ void GLWidget::renderDepthScene() { //this is for the depth
 
     //Enable cube maps and draw the skybox
     glEnable(GL_TEXTURE_CUBE_MAP);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMap);
+    if (m_zfocus > 0.3 || m_focalLength < 0.2 ){
+                glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMapFocused);
+    }
+    else {
+                glBindTexture(GL_TEXTURE_CUBE_MAP, m_depthCubeMap);
+    }
     glCallList(m_skybox);
 
     // Enable culling (back) faces for rendering the dragon
@@ -621,7 +644,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Down:
         {
             m_focalLength -= 0.1;
-            if (m_focalLength < 0) {
+            if (m_focalLength < .1) {
                 m_focalLength = 0.1;
             }
             break;
