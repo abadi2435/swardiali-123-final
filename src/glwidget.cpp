@@ -108,8 +108,11 @@ void GLWidget::initializeResources()
     createFramebufferObjects(width(), height());
     cout << "Loaded framebuffer objects..." << endl;
 
-    m_activeScene = new TableScene(this);
+    m_inactiveScene = new TableScene(this);
+    m_activeScene = new SpaceScene(this);
     m_activeScene->initializeResources();
+    m_inactiveScene->initializeResources();
+
     cout<< "Loaded active scene..." << endl;
 
     cout << " --- Finish Loading Resources ---" << endl;
@@ -463,6 +466,11 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
             m_paused = !m_paused;
             break;
         }
+    case Qt::Key_S:
+        Scene* temp = m_activeScene;
+        m_activeScene = m_inactiveScene;
+        m_inactiveScene = temp;
+        break;
     }
 }
 
@@ -491,6 +499,7 @@ void GLWidget::paintText()
         renderText(10, 110, "Up/Down: Change focal length = " + QString::number(m_zfocus), m_font);
         renderText(10, 125, "F: Toggle fly mode", m_font);
         renderText(10, 140, "P: Pause/Unpause", m_font);
+        renderText(10, 155, "S: Toggle Scene", m_font);
     } else {
         renderText(10, 20, "Press H for help.", m_font);
     }
